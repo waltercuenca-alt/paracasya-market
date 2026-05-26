@@ -1,0 +1,133 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Manrope", ui-sans-serif, sans-serif;
+
+  --color-ocean-50: #ebf7fb;
+  --color-ocean-100: #d0ecf5;
+  --color-ocean-200: #9cd9e9;
+  --color-ocean-500: #1485a6;
+  --color-ocean-600: #087091;
+  --color-ocean-700: #075c79;
+  --color-ocean-900: #073d5d;
+  --color-ocean-950: #062d46;
+  --color-sand-50: #fcfaf6;
+  --color-sand-100: #f5efe5;
+  --color-delivery: #ffc83d;
+  --color-delivery-dark: #d99400;
+  --color-ink: #122634;
+
+  --shadow-brand: 0 14px 34px -15px rgba(6, 45, 70, 0.42);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    font-family: var(--font-sans);
+    background: var(--color-sand-50);
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .bg-hero {
+    background:
+      radial-gradient(circle at 72% 28%, rgba(31, 176, 204, 0.23), transparent 36%),
+      linear-gradient(128deg, #062d46 0%, #075c79 58%, #087891 100%);
+  }
+
+  .card {
+    @apply rounded-2xl border border-white bg-white shadow-sm shadow-slate-200/60;
+  }
+
+  .eyebrow {
+    @apply inline-flex rounded-full bg-ocean-50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-ocean-700 ring-1 ring-inset ring-ocean-100;
+  }
+
+  .section-title {
+    @apply mt-3 font-display text-2xl font-extrabold tracking-tight text-ocean-950 sm:text-3xl;
+  }
+
+  .section-heading {
+    @apply flex items-end justify-between gap-6;
+  }
+
+  .button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-delivery px-6 py-4 text-sm font-extrabold text-ocean-950 shadow-lg shadow-amber-900/10 transition duration-200 hover:-translate-y-0.5 hover:bg-yellow-300 disabled:opacity-50 disabled:hover:translate-y-0;
+  }
+
+  .button-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-ocean-900 transition hover:border-ocean-200 hover:bg-ocean-50;
+  }
+
+  .button-ghost {
+    @apply inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-6 py-4 text-sm font-bold text-white transition hover:bg-white/20;
+  }
+
+  .input-field {
+    @apply h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-ocean-950 outline-none transition placeholder:text-slate-400 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100;
+  }
+
+  .quantity-button {
+    @apply flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-ocean-900 transition hover:bg-ocean-100;
+  }
+
+  .toggle {
+    @apply flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition;
+  }
+
+  .toggle span {
+    @apply h-5 w-5 rounded-full bg-white shadow-sm transition;
+  }
+}
+
+@keyframes gentle-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.float-card {
+  animation: gentle-float 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
