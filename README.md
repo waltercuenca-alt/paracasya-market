@@ -51,6 +51,10 @@ VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-clave-publica
 ```
 
+En Vercel, las variables deben existir en el entorno del despliegue correspondiente
+(`Production`, `Preview` o `Development`). Como Vite las incorpora al compilar, luego
+de agregarlas o corregirlas es necesario ejecutar un nuevo deployment.
+
 La integración de pedidos usa las siguientes columnas:
 
 ```text
