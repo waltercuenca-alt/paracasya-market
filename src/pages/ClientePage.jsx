@@ -5,6 +5,7 @@ import CategoryPill from "../components/CategoryPill";
 import ProductCard from "../components/ProductCard";
 import { categories } from "../data/categories";
 import { products } from "../data/products";
+import { createOrder } from "../services/ordersService";
 
 const allCategory = { id: "all", name: "Todos", short: "ALL", tone: "from-cyan-300 to-blue-500" };
 const initialForm = {
@@ -20,7 +21,8 @@ function ClientePage() {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(initialForm);
-  const [sent, setSent] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredProducts = useMemo(() => {
     const text = query.toLowerCase().trim();
@@ -34,7 +36,7 @@ function ClientePage() {
   }, [activeCategory, query]);
 
   function addProduct(product) {
-    setSent(false);
+    setFeedback(null);
     setItems((current) => {
       const existing = current.find((item) => item.id === product.id);
       return existing
@@ -55,9 +57,28 @@ function ClientePage() {
     );
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    setSent(true);
+    setFeedback(null);
+    setIsSubmitting(true);
+
+    try {
+      const order = await createOrder({ form, items });
+      setItems([]);
+      setForm(initialForm);
+      setFeedback({
+        type: "success",
+        message: `Pedido ${order.orderCode} enviado correctamente. Pronto lo confirmaremos.`,
+      });
+    } catch (error) {
+      console.error("No se pudo enviar el pedido:", error);
+      setFeedback({
+        type: "error",
+        message: error.message || "No pudimos enviar tu pedido. Intenta nuevamente.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -124,6 +145,8 @@ function ClientePage() {
         <div className="lg:sticky lg:top-25">
           <Cart
             form={form}
+            feedback={feedback}
+            isSubmitting={isSubmitting}
             items={items}
             onFormChange={(event) =>
               setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -131,7 +154,6 @@ function ClientePage() {
             onQuantityChange={changeQuantity}
             onRemove={(id) => setItems((current) => current.filter((item) => item.id !== id))}
             onSubmit={handleSubmit}
-            sent={sent}
           />
         </div>
       </div>

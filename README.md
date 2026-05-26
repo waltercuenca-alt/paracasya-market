@@ -38,7 +38,36 @@ src/
 ## Alcance de esta fase
 
 - Incluye 14 productos mock en soles y ocho categorías iniciales.
-- Todas las acciones son locales y demostrativas; no persisten al recargar.
-- No incluye Supabase ni Cloudinary todavía.
-- La separación entre datos, componentes y páginas deja lista la UI para conectar
-  catálogo, pedidos, imágenes y autenticación en fases posteriores.
+- El catálogo sigue siendo local y demostrativo.
+- Los pedidos de `/cliente` y su gestión en `/caja` se conectan a Supabase.
+- No incluye Cloudinary, autenticación ni gestión remota de productos todavía.
+
+## Supabase
+
+Define estas variables en `.env` y también en Vercel:
+
+```env
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-clave-publica
+```
+
+La integración de pedidos usa las siguientes columnas:
+
+```text
+orders:
+  id, order_code, customer_name, customer_phone, location_name,
+  room_reference, payment_method, delivery_notes, status,
+  subtotal, delivery_fee, total, created_at
+
+order_items:
+  id, order_id, product_id, product_name, quantity, unit_price, total_price
+```
+
+`order_items.order_id` debe relacionarse con `orders.id` para que `/caja` pueda
+consultar cada pedido con sus productos mediante `order_items(*)`.
+
+Las políticas RLS deben permitir las operaciones que uses con la clave pública:
+insertar pedidos e ítems, leer pedidos para caja y actualizar su estado. Hasta que
+exista autenticación, una política de lectura para `/caja` implica que esos pedidos
+pueden ser consultados desde el cliente web; conviene restringirla antes de operar
+con datos reales en producción.

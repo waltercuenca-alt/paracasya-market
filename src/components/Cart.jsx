@@ -1,11 +1,18 @@
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { formatCurrency } from "../utils/currency";
+import { calculateOrderTotals } from "../utils/orderTotals";
 
-const deliveryFee = 5;
-
-function Cart({ items, form, onFormChange, onQuantityChange, onRemove, onSubmit, sent }) {
-  const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
-  const total = subtotal + (items.length ? deliveryFee : 0);
+function Cart({
+  items,
+  form,
+  onFormChange,
+  onQuantityChange,
+  onRemove,
+  onSubmit,
+  feedback,
+  isSubmitting,
+}) {
+  const { subtotal, deliveryFee, total } = calculateOrderTotals(items);
 
   return (
     <aside className="card overflow-hidden" id="cart">
@@ -138,12 +145,23 @@ function Cart({ items, form, onFormChange, onQuantityChange, onRemove, onSubmit,
             <span>{formatCurrency(total)}</span>
           </div>
         </div>
-        <button className="button-primary w-full" disabled={!items.length} type="submit">
-          Enviar pedido
+        <button
+          className="button-primary w-full"
+          disabled={!items.length || isSubmitting}
+          type="submit"
+        >
+          {isSubmitting ? "Enviando pedido..." : "Enviar pedido"}
         </button>
-        {sent && (
-          <p className="mt-3 rounded-xl bg-emerald-50 p-3 text-center text-sm font-semibold text-emerald-700">
-            Pedido preparado para enviar por WhatsApp.
+        {feedback && (
+          <p
+            aria-live="polite"
+            className={`mt-3 rounded-xl p-3 text-center text-sm font-semibold ${
+              feedback.type === "success"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-rose-50 text-rose-700"
+            }`}
+          >
+            {feedback.message}
           </p>
         )}
       </form>

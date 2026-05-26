@@ -1,33 +1,84 @@
-import { CheckCheck, Clock3, Coins } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CheckCheck, Clock3, Coins, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import OrderCard from "../components/OrderCard";
-import { initialOrders } from "../data/orders";
+import { getOrders, updateOrderStatus } from "../services/ordersService";
 import { formatCurrency } from "../utils/currency";
 
 function CajaPage() {
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
-  const metrics = useMemo(
-    () => ({
+  const loadOrders = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      setOrders(await getOrders());
+    } catch (error) {
+      console.error("No se pudieron cargar los pedidos:", error);
+      setErrorMessage(error.message || "No pudimos cargar los pedidos.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const metrics = useMemo(() => {
+    const today = new Date().toDateString();
+    const todayOrders = orders.filter(
+      (order) => order.createdAt && new Date(order.createdAt).toDateString() === today,
+    );
+
+    return {
       pending: orders.filter((order) => !["Entregado", "Cancelado"].includes(order.status)).length,
-      delivered: orders.filter((order) => order.status === "Entregado").length,
-      sales: orders
+      delivered: todayOrders.filter((order) => order.status === "Entregado").length,
+      sales: todayOrders
         .filter((order) => order.status !== "Cancelado")
         .reduce((total, order) => total + order.total, 0),
-    }),
-    [orders],
-  );
+    };
+  }, [orders]);
 
-  function changeStatus(id, status) {
-    setOrders((current) =>
-      current.map((order) => (order.id === id ? { ...order, status } : order)),
-    );
+  async function changeStatus(id, status) {
+    setUpdatingOrderId(id);
+    setErrorMessage("");
+
+    try {
+      await updateOrderStatus(id, status);
+      setOrders((current) =>
+        current.map((order) => (order.id === id ? { ...order, status } : order)),
+      );
+    } catch (error) {
+      console.error("No se pudo actualizar el pedido:", error);
+      setErrorMessage(error.message || "No pudimos actualizar el estado.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
   }
 
   const summary = [
-    { title: "Pedidos pendientes", value: metrics.pending, icon: Clock3, tone: "bg-amber-50 text-amber-700" },
-    { title: "Entregados", value: metrics.delivered, icon: CheckCheck, tone: "bg-emerald-50 text-emerald-700" },
-    { title: "Vendido hoy", value: formatCurrency(metrics.sales), icon: Coins, tone: "bg-cyan-50 text-ocean-700" },
+    {
+      title: "Pedidos pendientes",
+      value: metrics.pending,
+      icon: Clock3,
+      tone: "bg-amber-50 text-amber-700",
+    },
+    {
+      title: "Entregados hoy",
+      value: metrics.delivered,
+      icon: CheckCheck,
+      tone: "bg-emerald-50 text-emerald-700",
+    },
+    {
+      title: "Vendido hoy",
+      value: formatCurrency(metrics.sales),
+      icon: Coins,
+      tone: "bg-cyan-50 text-ocean-700",
+    },
   ];
 
   return (
@@ -40,9 +91,10 @@ function CajaPage() {
           </h1>
           <p className="mt-2 text-slate-500">Controla entregas y estados en tiempo real.</p>
         </div>
-        <div className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
-          Tienda abierta
-        </div>
+        <button className="button-secondary gap-2" onClick={loadOrders} type="button">
+          <RefreshCw className={isLoading ? "animate-spin" : ""} size={17} />
+          Actualizar
+        </button>
       </div>
 
       <section className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -61,14 +113,35 @@ function CajaPage() {
 
       <section className="mt-9">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold text-ocean-950">Pedidos de hoy</h2>
+          <h2 className="font-display text-xl font-bold text-ocean-950">Pedidos recientes</h2>
           <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-slate-500 shadow-sm">
             {orders.length} pedidos
           </span>
         </div>
+        {errorMessage && (
+          <div
+            aria-live="polite"
+            className="mb-4 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm font-semibold text-rose-700"
+          >
+            {errorMessage}
+          </div>
+        )}
+        {isLoading && !orders.length && (
+          <div className="card p-10 text-center text-slate-500">Cargando pedidos...</div>
+        )}
+        {!isLoading && !orders.length && !errorMessage && (
+          <div className="card p-10 text-center text-slate-500">
+            Todavía no hay pedidos registrados.
+          </div>
+        )}
         <div className="grid gap-4">
           {orders.map((order) => (
-            <OrderCard key={order.id} onStatusChange={changeStatus} order={order} />
+            <OrderCard
+              isUpdating={updatingOrderId === order.id}
+              key={order.id}
+              onStatusChange={changeStatus}
+              order={order}
+            />
           ))}
         </div>
       </section>
