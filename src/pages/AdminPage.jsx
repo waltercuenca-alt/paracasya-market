@@ -261,7 +261,7 @@ function AdminPage() {
     setErrorMessage("");
 
     if (!isConnected) {
-      setErrorMessage("No se puede guardar disponibilidad hasta aplicar la migración SQL/RLS.");
+      setErrorMessage("No se puede cambiar la visibilidad en tienda hasta aplicar la migración SQL/RLS.");
       return;
     }
 
@@ -269,7 +269,7 @@ function AdminPage() {
       const updated = await toggleProductAvailability(product.id, !product.available);
       setProducts((current) => current.map((item) => (item.id === product.id ? updated : item)));
     } catch (error) {
-      setErrorMessage(error.message || "No pudimos cambiar la disponibilidad.");
+      setErrorMessage(error.message || "No pudimos cambiar la visibilidad en tienda.");
     }
   }
 
@@ -394,6 +394,10 @@ function AdminPage() {
               pegá el token interno de Supabase Functions. No uses service_role ni secretos en
               variables VITE.
             </p>
+            <p className="mt-3 text-sm leading-relaxed text-amber-800">
+              Los productos ocultos no aparecen en la tienda del cliente, pero siguen guardados
+              en el admin y podés volver a activarlos cuando quieras.
+            </p>
           </div>
           <form className="flex gap-2" onSubmit={handleSaveAdminToken}>
             <input
@@ -478,7 +482,7 @@ function AdminPage() {
                 onChange={(event) => updateForm("available", event.target.checked)}
                 type="checkbox"
               />
-              Disponible
+              Activo en tienda
             </label>
             <label className="cursor-pointer rounded-2xl border border-slate-200 px-3 py-3 text-sm font-bold text-slate-600">
               <input
@@ -523,16 +527,21 @@ function AdminPage() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2 sm:justify-end">
-                    <button
+                    <span
                       className={`rounded-full px-3 py-2 text-xs font-bold ${
                         product.available
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-slate-100 text-slate-500"
                       }`}
+                    >
+                      {product.available ? "Activo en tienda" : "Oculto en tienda"}
+                    </span>
+                    <button
+                      className="button-secondary px-3 py-2 text-xs"
                       onClick={() => handleToggleAvailability(product)}
                       type="button"
                     >
-                      {product.available ? "Disponible" : "No disponible"}
+                      {product.available ? "Ocultar de tienda" : "Volver a mostrar"}
                     </button>
                     <button className="button-secondary px-3 py-2 text-xs" onClick={() => handleToggleFeatured(product)} type="button">
                       {product.isFeatured ? "Quitar destacado" : "Destacar"}
