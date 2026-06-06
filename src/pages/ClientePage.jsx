@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import Cart from "../components/Cart";
 import CategoryPill from "../components/CategoryPill";
 import ProductCard from "../components/ProductCard";
-import { categories } from "../data/categories";
+import { clientCategories } from "../data/categories";
 import { products } from "../data/products";
 import { createOrder } from "../services/ordersService";
 
@@ -98,8 +98,8 @@ function ClientePage() {
                 Pedí tus esenciales de Paracas en minutos
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-blue-100 sm:text-base">
-                Bebidas frías, hielo, snacks, playa y básicos útiles directo a tu hotel,
-                Airbnb o casa.
+                Bebidas frías, comida rápida, snacks y promos directo a tu hotel, Airbnb o
+                casa.
               </p>
 
               <label className="mt-6 flex h-14 max-w-xl items-center gap-3 rounded-2xl bg-white px-4 text-slate-400 shadow-xl shadow-ocean-950/10">
@@ -107,7 +107,7 @@ function ClientePage() {
                 <input
                   className="w-full bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Buscar bebidas, hielo, snacks..."
+                  placeholder="Buscar bebidas, comida, snacks..."
                   type="search"
                   value={query}
                 />
@@ -135,25 +135,33 @@ function ClientePage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-ocean-500">
-                        Promos rápidas
+                        Promo del día
                       </p>
-                      <h2 className="mt-1 font-display text-xl font-black">Kit playa listo</h2>
+                      <h2 className="mt-1 font-display text-xl font-black">Combos listos</h2>
                     </div>
                     <span className="rounded-full bg-ocean-900 px-3 py-1.5 text-xs font-black text-delivery">
                       Hoy
                     </span>
                   </div>
                   <div className="mt-5 grid grid-cols-3 gap-3">
-                    {products.slice(0, 3).map((product) => (
-                      <div className="rounded-2xl bg-white p-2 text-center shadow-sm" key={product.id}>
+                    {products
+                      .filter((product) => product.category === "promo-dia")
+                      .slice(0, 3)
+                      .map((product) => (
                         <div
-                          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-xs font-black text-ocean-900 ${product.colors}`}
+                          className="rounded-2xl bg-white p-2 text-center shadow-sm"
+                          key={product.id}
                         >
-                          {product.visual}
+                          <div
+                            className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-xs font-black text-ocean-900 ${product.colors}`}
+                          >
+                            {product.visual}
+                          </div>
+                          <p className="mt-2 truncate text-[11px] font-extrabold">
+                            {product.name}
+                          </p>
                         </div>
-                        <p className="mt-2 truncate text-[11px] font-extrabold">{product.name}</p>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                   <div className="mt-5 flex items-center justify-between rounded-2xl bg-ocean-950 p-4 text-white">
                     <div>
@@ -169,7 +177,7 @@ function ClientePage() {
         </section>
 
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-          {[allCategory, ...categories].map((category) => (
+          {[allCategory, ...clientCategories].map((category) => (
             <CategoryPill
               active={activeCategory === category.id}
               category={category}
