@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
+import ProtectedInternalRoute from "./components/ProtectedInternalRoute";
 import AdminPage from "./pages/AdminPage";
 import CajaPage from "./pages/CajaPage";
 import ClientePage from "./pages/ClientePage";
@@ -11,8 +12,22 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/cliente" element={<ClientePage />} />
-        <Route path="/caja" element={<CajaPage />} />
-        <Route path="/admin" element={<AdminPage />} />
+        <Route
+          path="/caja"
+          element={
+            <ProtectedInternalRoute>
+              <CajaPage />
+            </ProtectedInternalRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedInternalRoute>
+              <AdminPage />
+            </ProtectedInternalRoute>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

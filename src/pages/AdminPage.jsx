@@ -1,7 +1,8 @@
-import { Bike, Plus, Settings2, Store } from "lucide-react";
+import { Bike, LogOut, Plus, Settings2, Store } from "lucide-react";
 import { useState } from "react";
 import AdminProductRow from "../components/AdminProductRow";
 import { products as initialProducts } from "../data/products";
+import { clearInternalAccess } from "../utils/internalAccess";
 
 function ToggleCard({ icon: Icon, label, active, activeLabel, inactiveLabel, onToggle }) {
   return (
@@ -42,6 +43,11 @@ function AdminPage() {
     );
   }
 
+  function handleLogout() {
+    clearInternalAccess();
+    window.location.reload();
+  }
+
   return (
     <div className="page-container pb-14 pt-8 sm:pt-10">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -52,10 +58,16 @@ function AdminPage() {
           </h1>
           <p className="mt-2 text-slate-500">Gestiona disponibilidad, delivery y productos.</p>
         </div>
-        <button className="button-primary" type="button">
-          <Plus size={18} />
-          Nuevo producto
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button className="button-primary" type="button">
+            <Plus size={18} />
+            Nuevo producto
+          </button>
+          <button className="button-secondary gap-2" onClick={handleLogout} type="button">
+            <LogOut size={17} />
+            Cerrar sesión
+          </button>
+        </div>
       </div>
 
       <section className="mt-8">

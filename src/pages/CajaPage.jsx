@@ -1,8 +1,9 @@
-import { CheckCheck, Clock3, Coins, RefreshCw } from "lucide-react";
+import { CheckCheck, Clock3, Coins, LogOut, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import OrderCard from "../components/OrderCard";
 import { getOrders, updateOrderStatus } from "../services/ordersService";
 import { formatCurrency } from "../utils/currency";
+import { clearInternalAccess } from "../utils/internalAccess";
 
 function CajaPage() {
   const [orders, setOrders] = useState([]);
@@ -60,6 +61,11 @@ function CajaPage() {
     }
   }
 
+  function handleLogout() {
+    clearInternalAccess();
+    window.location.reload();
+  }
+
   const summary = [
     {
       title: "Pedidos pendientes",
@@ -91,10 +97,16 @@ function CajaPage() {
           </h1>
           <p className="mt-2 text-slate-500">Controla entregas y estados en tiempo real.</p>
         </div>
-        <button className="button-secondary gap-2" onClick={loadOrders} type="button">
-          <RefreshCw className={isLoading ? "animate-spin" : ""} size={17} />
-          Actualizar
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button className="button-secondary gap-2" onClick={loadOrders} type="button">
+            <RefreshCw className={isLoading ? "animate-spin" : ""} size={17} />
+            Actualizar
+          </button>
+          <button className="button-secondary gap-2" onClick={handleLogout} type="button">
+            <LogOut size={17} />
+            Cerrar sesión
+          </button>
+        </div>
       </div>
 
       <section className="mt-8 grid gap-3 sm:grid-cols-3">
