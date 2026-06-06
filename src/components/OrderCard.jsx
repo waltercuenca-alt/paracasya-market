@@ -1,9 +1,12 @@
 import { MapPin, MessageCircle, ReceiptText } from "lucide-react";
 import { validOrderStatuses } from "../services/ordersService";
 import { formatCurrency } from "../utils/currency";
+import { buildOrderWhatsappUrl } from "../utils/whatsapp";
 import StatusBadge from "./StatusBadge";
 
 function OrderCard({ order, onStatusChange, isUpdating }) {
+  const whatsappUrl = buildOrderWhatsappUrl(order);
+
   return (
     <article className="card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -51,10 +54,26 @@ function OrderCard({ order, onStatusChange, isUpdating }) {
         ))}
       </div>
       {isUpdating && <p className="mt-3 text-sm font-semibold text-ocean-600">Guardando estado...</p>}
-      <button className="button-secondary mt-4 w-full gap-2 py-3 sm:w-auto" type="button">
-        <MessageCircle size={17} />
-        Enviar WhatsApp
-      </button>
+      {whatsappUrl ? (
+        <a
+          className="button-secondary mt-4 w-full gap-2 py-3 sm:w-auto"
+          href={whatsappUrl}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <MessageCircle size={17} />
+          Confirmar por WhatsApp
+        </a>
+      ) : (
+        <button
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-5 py-3 text-sm font-bold text-slate-400 sm:w-auto"
+          disabled
+          type="button"
+        >
+          <MessageCircle size={17} />
+          WhatsApp no válido
+        </button>
+      )}
     </article>
   );
 }
