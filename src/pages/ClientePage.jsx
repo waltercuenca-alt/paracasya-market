@@ -1,11 +1,13 @@
 import { Clock3, MapPin, Search, ShieldCheck, ShoppingCart, Sparkles, Truck } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Cart from "../components/Cart";
 import CategoryPill from "../components/CategoryPill";
 import ProductCard from "../components/ProductCard";
 import { clientCategories } from "../data/categories";
 import { products } from "../data/products";
+import { getActiveCategories } from "../services/categoriesService";
 import { createOrder } from "../services/ordersService";
+import { getAvailableProducts } from "../services/productsService";
 
 const allCategory = { id: "all", name: "Todos", short: "ALL", tone: "from-cyan-300 to-blue-500" };
 const initialForm = {
@@ -19,21 +21,66 @@ const initialForm = {
 function ClientePage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [query, setQuery] = useState("");
+  const [catalogCategories, setCatalogCategories] = useState(clientCategories);
+  const [catalogProducts, setCatalogProducts] = useState(products);
+  const [catalogNotice, setCatalogNotice] = useState("");
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCatalog() {
+      try {
+        const [remoteCategories, remoteProducts] = await Promise.all([
+          getActiveCategories(),
+          getAvailableProducts(),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (!remoteCategories.length || !remoteProducts.length) {
+          setCatalogCategories(clientCategories);
+          setCatalogProducts(products);
+          setCatalogNotice("Mostrando catálogo inicial mientras se activa Supabase.");
+          return;
+        }
+
+        setCatalogCategories(remoteCategories);
+        setCatalogProducts(remoteProducts);
+        setCatalogNotice("");
+      } catch (error) {
+        console.error("Usando catálogo local por fallback:", error);
+
+        if (isMounted) {
+          setCatalogCategories(clientCategories);
+          setCatalogProducts(products);
+          setCatalogNotice("Mostrando catálogo inicial mientras se activa Supabase.");
+        }
+      }
+    }
+
+    loadCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredProducts = useMemo(() => {
     const text = query.toLowerCase().trim();
-    return products.filter(
+    return catalogProducts.filter(
       (product) =>
         (activeCategory === "all" || product.category === activeCategory) &&
         (!text ||
           product.name.toLowerCase().includes(text) ||
-          product.description.toLowerCase().includes(text)),
+          (product.description ?? "").toLowerCase().includes(text)),
     );
-  }, [activeCategory, query]);
+  }, [activeCategory, catalogProducts, query]);
 
   function addProduct(product) {
     setFeedback(null);
@@ -144,7 +191,7 @@ function ClientePage() {
                     </span>
                   </div>
                   <div className="mt-5 grid grid-cols-3 gap-3">
-                    {products
+                    {catalogProducts
                       .filter((product) => product.category === "promo-dia")
                       .slice(0, 3)
                       .map((product) => (
@@ -177,7 +224,7 @@ function ClientePage() {
         </section>
 
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-          {[allCategory, ...clientCategories].map((category) => (
+          {[allCategory, ...catalogCategories].map((category) => (
             <CategoryPill
               active={activeCategory === category.id}
               category={category}
@@ -187,6 +234,11 @@ function ClientePage() {
             />
           ))}
         </div>
+        {catalogNotice && (
+          <div className="mb-5 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+            {catalogNotice}
+          </div>
+        )}
 
         <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_390px]">
           <section>

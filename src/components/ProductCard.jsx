@@ -9,9 +9,18 @@ function ProductCard({ product, onAdd }) {
       >
         <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/35 blur-xl" />
         <div className="absolute -bottom-8 left-4 h-20 w-20 rounded-full bg-white/30 blur-lg" />
-        <span className="relative flex h-20 w-20 items-center justify-center rounded-[1.4rem] bg-white/75 font-display text-3xl font-black text-ocean-900/70 shadow-inner">
-          {product.visual}
-        </span>
+        {product.imageUrl ? (
+          <img
+            alt={product.name}
+            className="relative h-full w-full object-cover"
+            loading="lazy"
+            src={product.imageUrl}
+          />
+        ) : (
+          <span className="relative flex h-20 w-20 items-center justify-center rounded-[1.4rem] bg-white/75 font-display text-3xl font-black text-ocean-900/70 shadow-inner">
+            {product.visual}
+          </span>
+        )}
         {product.tag && (
           <span className="absolute left-3 top-3 rounded-full bg-ocean-950 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-sm">
             {product.tag}
