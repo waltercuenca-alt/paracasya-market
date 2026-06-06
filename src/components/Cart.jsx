@@ -1,4 +1,4 @@
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { CheckCircle2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { formatCurrency } from "../utils/currency";
 import { calculateOrderTotals } from "../utils/orderTotals";
 
@@ -15,27 +15,44 @@ function Cart({
   const { subtotal, deliveryFee, total } = calculateOrderTotals(items);
 
   return (
-    <aside className="card overflow-hidden" id="cart">
-      <div className="border-b border-slate-100 bg-ocean-950 px-5 py-5 text-white">
-        <div className="flex items-center gap-3">
-          <ShoppingBag className="text-delivery" size={22} />
+    <aside
+      className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-xl shadow-ocean-950/8"
+      id="cart"
+    >
+      <div className="relative overflow-hidden bg-ocean-950 px-5 py-5 text-white">
+        <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-delivery/15 blur-2xl" />
+        <div className="relative flex items-center gap-3">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-delivery ring-1 ring-white/10">
+            <ShoppingBag size={22} />
+          </span>
           <div>
             <h2 className="font-display text-lg font-bold">Tu pedido</h2>
             <p className="text-xs text-blue-100">Delivery rápido en Paracas</p>
           </div>
         </div>
+        <div className="relative mt-4 grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-blue-100">
+          {["Carrito", "Datos", "Confirmar"].map((step, index) => (
+            <div className="rounded-full bg-white/10 px-2 py-2 ring-1 ring-white/10" key={step}>
+              {index + 1}. {step}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-3 p-5">
+      <div className="max-h-[390px] space-y-3 overflow-y-auto p-5">
         {items.length === 0 && (
-          <div className="rounded-2xl bg-sand-100 p-6 text-center text-sm text-slate-500">
-            Agrega productos para comenzar tu pedido.
+          <div className="rounded-[1.5rem] border border-dashed border-ocean-100 bg-sand-50 p-6 text-center text-sm text-slate-500">
+            <ShoppingBag className="mx-auto mb-3 text-ocean-300" size={28} />
+            Agrega productos para comenzar tu pedido premium.
           </div>
         )}
         {items.map((item) => (
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-100 p-3" key={item.id}>
+          <div
+            className="flex items-start gap-3 rounded-[1.35rem] border border-slate-100 bg-white p-3 shadow-sm shadow-slate-100"
+            key={item.id}
+          >
             <div
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-xs font-bold text-ocean-900 ${item.colors}`}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-xs font-black text-ocean-900 ${item.colors}`}
             >
               {item.visual}
             </div>
@@ -64,7 +81,7 @@ function Cart({
             </div>
             <button
               aria-label="Eliminar producto"
-              className="text-slate-400 transition hover:text-rose-500"
+              className="rounded-full p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
               onClick={() => onRemove(item.id)}
               type="button"
             >
@@ -75,7 +92,10 @@ function Cart({
       </div>
 
       <form className="border-t border-slate-100 p-5" onSubmit={onSubmit}>
-        <h3 className="font-display font-bold text-ocean-950">Datos de entrega</h3>
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="text-emerald-500" size={18} />
+          <h3 className="font-display font-bold text-ocean-950">Datos de entrega</h3>
+        </div>
         <div className="mt-4 grid gap-3">
           <input
             className="input-field"
@@ -111,10 +131,10 @@ function Cart({
           <div className="grid grid-cols-2 gap-2">
             {["Yape", "Efectivo"].map((method) => (
               <label
-                className={`cursor-pointer rounded-xl border px-3 py-3 text-center text-sm font-bold transition ${
+                className={`cursor-pointer rounded-2xl border px-3 py-3 text-center text-sm font-bold transition ${
                   form.payment === method
-                    ? "border-ocean-900 bg-ocean-50 text-ocean-900"
-                    : "border-slate-200 text-slate-500"
+                    ? "border-ocean-900 bg-ocean-50 text-ocean-900 shadow-sm"
+                    : "border-slate-200 text-slate-500 hover:border-ocean-100"
                 }`}
                 key={method}
               >
@@ -131,7 +151,8 @@ function Cart({
             ))}
           </div>
         </div>
-        <div className="my-5 space-y-2 border-y border-dashed border-slate-200 py-4 text-sm">
+
+        <div className="my-5 space-y-2 rounded-[1.35rem] bg-sand-50 p-4 text-sm">
           <div className="flex justify-between text-slate-500">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
@@ -140,13 +161,14 @@ function Cart({
             <span>Delivery</span>
             <span>{items.length ? formatCurrency(deliveryFee) : "-"}</span>
           </div>
-          <div className="flex justify-between font-display text-base font-bold text-ocean-950">
+          <div className="flex justify-between border-t border-dashed border-slate-200 pt-3 font-display text-base font-bold text-ocean-950">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>
           </div>
         </div>
+
         <button
-          className="button-primary w-full"
+          className="button-primary w-full rounded-2xl py-4"
           disabled={!items.length || isSubmitting}
           type="submit"
         >
