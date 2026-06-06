@@ -11,23 +11,23 @@ import {
   Smartphone,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { categories } from "../data/categories";
+import { clientCategories } from "../data/categories";
 
 const steps = [
   {
     icon: ShoppingBag,
-    title: "Elige lo que necesitas",
-    copy: "Bebidas frías, snacks, playa y esenciales en un solo lugar.",
+    title: "Elegí lo que necesitás",
+    copy: "Bebidas, snacks, comida rápida o la promo del día en un solo lugar.",
   },
   {
     icon: Smartphone,
-    title: "Confirma tu entrega",
-    copy: "Indica hotel, Airbnb o dirección y elige Yape o efectivo.",
+    title: "Confirmá tu entrega",
+    copy: "Indicá hotel, Airbnb, habitación o dirección y elegí Yape o efectivo.",
   },
   {
     icon: Bike,
-    title: "Recíbelo rápido",
-    copy: "Preparamos y enviamos tu pedido dentro de Paracas.",
+    title: "Recibilo rápido",
+    copy: "Coordinamos tu pedido y te confirmamos por WhatsApp.",
   },
 ];
 
@@ -51,14 +51,13 @@ function LandingPage() {
             </p>
             <h1 className="mt-6 font-display text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
               ParacasYa
-              <span className="block text-delivery">Market</span>
+              <span className="block text-delivery">Market Online</span>
             </h1>
             <p className="mt-5 font-display text-xl font-semibold text-white sm:text-2xl">
               El kiosco online de Paracas
             </p>
             <p className="mt-3 max-w-lg text-base leading-relaxed text-blue-100 sm:text-lg">
-              Pedí lo que necesites sin salir de casa. También entregamos en hoteles y Airbnb,
-              para que disfrutes cada minuto de tu estadía.
+              Pedí bebidas, snacks y comida rápida directo a tu hotel, Airbnb o casa en Paracas.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link className="button-primary" to="/cliente">
@@ -87,7 +86,7 @@ function LandingPage() {
                       Entrega rápida
                     </p>
                     <p className="mt-1 font-display text-lg font-bold text-ocean-950">
-                      Tu pedido de playa
+                      Tu pedido rápido
                     </p>
                   </div>
                   <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
@@ -96,9 +95,10 @@ function LandingPage() {
                 </div>
                 <div className="mt-5 space-y-3">
                   {[
-                    ["HI", "Bolsa de hielo", "S/ 8"],
-                    ["SP", "Bloqueador SPF 50", "S/ 39"],
-                    ["AG", "Agua mineral x2", "S/ 7"],
+                    ["AG", "Agua mineral 1.5 L", "S/ 6"],
+                    ["CC", "Coca-Cola personal", "S/ 5"],
+                    ["SA", "Salchipapa", "S/ 13"],
+                    ["GP", "Gaseosa + papas", "S/ 9"],
                   ].map(([label, name, price]) => (
                     <div
                       className="flex items-center gap-3 rounded-2xl bg-sand-50 p-3"
@@ -115,7 +115,7 @@ function LandingPage() {
                 <div className="mt-5 flex items-center justify-between rounded-2xl bg-ocean-950 p-4 text-white">
                   <div>
                     <p className="text-xs text-blue-200">Total con delivery</p>
-                    <p className="font-display text-xl font-extrabold">S/ 59</p>
+                    <p className="font-display text-xl font-extrabold">S/ 33</p>
                   </div>
                   <span className="rounded-xl bg-delivery px-4 py-3 text-sm font-bold text-ocean-950">
                     Confirmar
@@ -144,8 +144,8 @@ function LandingPage() {
             Ver tienda <ArrowRight size={17} />
           </Link>
         </div>
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-          {categories.map((category) => (
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {clientCategories.map((category) => (
             <Link
               className="card group flex flex-col items-center gap-3 px-2 py-5 text-center transition hover:-translate-y-1 hover:border-ocean-100"
               key={category.id}
@@ -168,7 +168,7 @@ function LandingPage() {
             <p className="eyebrow">Sin complicaciones</p>
             <h2 className="section-title">Cómo funciona</h2>
             <p className="mt-3 text-slate-500">
-              Todo lo necesario para tu día en Paracas, en tres pasos simples.
+              Pedís desde donde estés, confirmamos por WhatsApp y coordinamos la entrega.
             </p>
           </div>
           <div className="mt-9 grid gap-4 md:grid-cols-3">
@@ -196,8 +196,8 @@ function LandingPage() {
             <p className="eyebrow">Hecho para Paracas</p>
             <h2 className="section-title">Lo que hace mejor tu pedido</h2>
             <p className="mt-4 text-slate-500">
-              Un servicio local premium que acompaña a turistas y residentes, desde el desayuno
-              hasta ese último pedido antes del atardecer.
+              Un servicio local premium que acompaña a turistas, hoteles, Airbnbs y residentes
+              con pedidos simples, claros y rápidos.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -218,15 +218,15 @@ function LandingPage() {
         <div className="relative overflow-hidden rounded-[2rem] bg-ocean-950 px-6 py-10 text-center text-white sm:px-10">
           <div className="absolute left-1/2 top-0 h-52 w-80 -translate-x-1/2 rounded-full bg-cyan-500/15 blur-3xl" />
           <div className="relative">
-            <p className="eyebrow bg-white/10 text-delivery ring-white/10">ParacasYa Market</p>
+            <p className="eyebrow bg-white/10 text-delivery ring-white/10">¿Listo para pedir?</p>
             <h2 className="mx-auto mt-5 max-w-xl font-display text-3xl font-extrabold">
               Tu próximo pedido está a pocos toques
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-blue-100">
-              Bebidas frías, hielo, comida y todo lo útil donde estés hospedado.
+              Bebidas frías, snacks, comida rápida y promos directo donde estés hospedado.
             </p>
             <Link className="button-primary mt-8" to="/cliente">
-              Ir a la tienda <ArrowRight size={18} />
+              Pedir ahora <ArrowRight size={18} />
             </Link>
           </div>
         </div>
