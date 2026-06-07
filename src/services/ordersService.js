@@ -31,6 +31,8 @@ function formatCreatedAt(createdAt) {
 
 function normalizeOrder(order) {
   const items = order.order_items ?? [];
+  const origin = order.order_origin ?? "";
+  const originLabel = order.order_origin_label ?? "";
 
   return {
     id: order.id,
@@ -44,10 +46,21 @@ function normalizeOrder(order) {
     status: order.status ?? "Pendiente",
     items: items.map((item) => `${item.product_name} x${item.quantity}`),
     total: Number(order.total ?? 0),
+    origin,
+    originLabel,
   };
 }
 
-export async function createOrder({ form, items }) {
+function isMissingOriginColumnError(error) {
+  const message = `${error?.message ?? ""} ${error?.details ?? ""} ${error?.hint ?? ""}`;
+  return (
+    error?.code === "PGRST204" ||
+    message.includes("order_origin") ||
+    message.includes("order_origin_label")
+  );
+}
+
+export async function createOrder({ form, items, origin }) {
   const client = getSupabaseClient();
   const orderCode = generateOrderCode();
   const { subtotal, deliveryFee, total } = calculateOrderTotals(items);
@@ -66,11 +79,30 @@ export async function createOrder({ form, items }) {
     total,
   };
 
-  const { data: order, error: orderError } = await client
+  if (origin?.origin) {
+    orderPayload.order_origin = origin.origin;
+    orderPayload.order_origin_label = origin.label || origin.origin;
+  }
+
+  let { data: order, error: orderError } = await client
     .from("orders")
     .insert(orderPayload)
     .select("id, order_code")
     .single();
+
+  if (orderError && origin?.origin && isMissingOriginColumnError(orderError)) {
+    console.warn(
+      "La tabla orders todavia no tiene columnas de origen. Reintentando pedido sin origen.",
+    );
+    const { order_origin, order_origin_label, ...payloadWithoutOrigin } = orderPayload;
+    const retry = await client
+      .from("orders")
+      .insert(payloadWithoutOrigin)
+      .select("id, order_code")
+      .single();
+    order = retry.data;
+    orderError = retry.error;
+  }
 
   if (orderError) {
     console.error("Error creando el pedido en Supabase:", JSON.stringify(orderError, null, 2));

@@ -11,6 +11,7 @@ import { getAvailableProducts } from "../services/productsService";
 import { defaultStoreSettings, getStoreSettings } from "../services/storeSettingsService";
 import { formatCurrency } from "../utils/currency";
 import { calculateOrderTotals } from "../utils/orderTotals";
+import { resolveOrderOriginFromUrl } from "../utils/orderOrigin";
 
 const allCategory = { id: "all", name: "Todos", short: "ALL", tone: "from-cyan-300 to-blue-500" };
 const initialForm = {
@@ -32,11 +33,17 @@ function ClientePage() {
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [storeSettings, setStoreSettings] = useState(defaultStoreSettings);
+  const [orderOrigin, setOrderOrigin] = useState(null);
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const { total: cartTotal } = calculateOrderTotals(items);
 
   useEffect(() => {
     let isMounted = true;
+
+    const origin = resolveOrderOriginFromUrl(window.location.search);
+    if (origin) {
+      setOrderOrigin(origin);
+    }
 
     async function loadStoreStatus() {
       const settings = await getStoreSettings();
@@ -148,7 +155,7 @@ function ClientePage() {
     setIsSubmitting(true);
 
     try {
-      const order = await createOrder({ form, items });
+      const order = await createOrder({ form, items, origin: orderOrigin });
       setItems([]);
       setForm(initialForm);
       setFeedback({
@@ -287,6 +294,11 @@ function ClientePage() {
             {catalogNotice}
           </div>
         )}
+        {orderOrigin?.label && (
+          <div className="my-5 rounded-[1.35rem] border border-ocean-100 bg-white/90 px-4 py-3 text-sm font-bold text-ocean-800 shadow-sm">
+            Pedido asociado a: <span className="text-ocean-950">{orderOrigin.label}</span>
+          </div>
+        )}
         {!storeSettings.storeOpen && (
           <div className="my-5 rounded-[1.6rem] border border-amber-100 bg-amber-50 p-5 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
@@ -368,6 +380,7 @@ function ClientePage() {
               feedback={feedback}
               isSubmitting={isSubmitting}
               items={items}
+              orderOrigin={orderOrigin}
               storeSettings={storeSettings}
               onFormChange={(event) =>
                 setForm((current) => ({ ...current, [event.target.name]: event.target.value }))

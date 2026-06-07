@@ -1,4 +1,4 @@
-import { MapPin, MessageCircle, ReceiptText } from "lucide-react";
+import { MapPin, MessageCircle, ReceiptText, Tag } from "lucide-react";
 import { validOrderStatuses } from "../services/ordersService";
 import { formatCurrency } from "../utils/currency";
 import { buildOrderWhatsappUrl } from "../utils/whatsapp";
@@ -34,6 +34,17 @@ function OrderCard({ order, onStatusChange, isUpdating }) {
           <MapPin className="mt-0.5 shrink-0 text-ocean-500" size={16} />
           <p>{order.destination}</p>
         </div>
+        {(order.originLabel || order.origin) && (
+          <div className="flex gap-2 sm:col-span-2">
+            <Tag className="mt-0.5 shrink-0 text-ocean-500" size={16} />
+            <p>
+              Origen: <span className="font-bold text-ocean-800">{order.originLabel || order.origin}</span>
+              {order.origin && order.originLabel && (
+                <span className="text-slate-400"> · QR: {order.origin}</span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex gap-2 overflow-x-auto pb-1">

@@ -11,6 +11,7 @@ function Cart({
   onSubmit,
   feedback,
   isSubmitting,
+  orderOrigin,
   storeSettings,
 }) {
   const { subtotal, deliveryFee, total } = calculateOrderTotals(items);
@@ -115,6 +116,11 @@ function Cart({
           <h3 className="font-display font-bold text-ocean-950">Datos de entrega</h3>
         </div>
         <div className="mt-4 grid gap-3">
+          {orderOrigin?.label && (
+            <div className="rounded-2xl border border-ocean-100 bg-ocean-50 px-4 py-3 text-sm font-bold text-ocean-800">
+              Origen del pedido: {orderOrigin.label}
+            </div>
+          )}
           <input
             className="input-field"
             name="name"
