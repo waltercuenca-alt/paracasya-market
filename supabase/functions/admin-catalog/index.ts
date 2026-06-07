@@ -70,6 +70,22 @@ function categoryPayload(category: Record<string, unknown>) {
   };
 }
 
+function storeSettingsPayload(settings: Record<string, unknown>) {
+  return {
+    id: "main",
+    store_open: Boolean(settings.storeOpen ?? settings.store_open ?? true),
+    opening_hours: String(
+      settings.openingHours ?? settings.opening_hours ?? "Atendemos de 10:00 a.m. a 10:00 p.m.",
+    ).trim(),
+    closed_message: String(
+      settings.closedMessage ??
+        settings.closed_message ??
+        "Estamos cerrados por ahora. Volvemos a atender mañana desde las 10:00 a.m.",
+    ).trim(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -168,6 +184,28 @@ Deno.serve(async (req) => {
         const { data, error } = await supabase
           .from("categories")
           .insert(categoryPayload(payload))
+          .select("*")
+          .single();
+
+        if (error) throw error;
+        return jsonResponse({ data });
+      }
+
+      case "getStoreSettings": {
+        const { data, error } = await supabase
+          .from("store_settings")
+          .select("*")
+          .eq("id", "main")
+          .maybeSingle();
+
+        if (error) throw error;
+        return jsonResponse({ data });
+      }
+
+      case "updateStoreSettings": {
+        const { data, error } = await supabase
+          .from("store_settings")
+          .upsert(storeSettingsPayload(payload), { onConflict: "id" })
           .select("*")
           .single();
 

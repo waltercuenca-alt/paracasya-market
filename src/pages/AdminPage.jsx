@@ -1,4 +1,4 @@
-import { Bike, LogOut, Plus, RefreshCw, Save, Settings2, Store, X } from "lucide-react";
+import { Bike, LogOut, Plus, RefreshCw, Save, Settings2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { clientCategories } from "../data/categories";
 import { products as initialProducts } from "../data/products";
@@ -19,6 +19,11 @@ import {
   toggleProductFeatured,
   updateProduct,
 } from "../services/productsService";
+import {
+  defaultStoreSettings,
+  getStoreSettings,
+  saveStoreSettings,
+} from "../services/storeSettingsService";
 import { formatCurrency } from "../utils/currency";
 import { clearInternalAccess } from "../utils/internalAccess";
 
@@ -80,6 +85,9 @@ function AdminPage() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [storeOpen, setStoreOpen] = useState(true);
+  const [openingHours, setOpeningHours] = useState(defaultStoreSettings.openingHours);
+  const [closedMessage, setClosedMessage] = useState(defaultStoreSettings.closedMessage);
+  const [isSavingStoreSettings, setIsSavingStoreSettings] = useState(false);
   const [deliveryActive, setDeliveryActive] = useState(true);
   const [deliveryFee, setDeliveryFee] = useState("5.00");
   const [adminToken, setAdminToken] = useState(getAdminCatalogToken);
@@ -139,9 +147,17 @@ function AdminPage() {
     }
   }, []);
 
+  const loadStoreSettings = useCallback(async () => {
+    const settings = await getStoreSettings();
+    setStoreOpen(settings.storeOpen);
+    setOpeningHours(settings.openingHours);
+    setClosedMessage(settings.closedMessage);
+  }, []);
+
   useEffect(() => {
     loadCatalog();
-  }, [loadCatalog]);
+    loadStoreSettings();
+  }, [loadCatalog, loadStoreSettings]);
 
   useEffect(() => {
     resetForm();
@@ -158,6 +174,34 @@ function AdminPage() {
     saveAdminCatalogToken(adminToken);
     setSuccessMessage("Token de Edge Function guardado para esta sesión.");
     setErrorMessage("");
+  }
+
+  async function handleSaveStoreSettings(event) {
+    event.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+    setIsSavingStoreSettings(true);
+
+    try {
+      const result = await saveStoreSettings({
+        storeOpen,
+        openingHours,
+        closedMessage,
+      });
+
+      setStoreOpen(result.settings.storeOpen);
+      setOpeningHours(result.settings.openingHours);
+      setClosedMessage(result.settings.closedMessage);
+      setSuccessMessage(
+        result.persisted
+          ? "Configuración de tienda guardada en Supabase."
+          : "Configuración guardada como vista previa local. Aplicá SQL y desplegá admin-catalog para producción.",
+      );
+    } catch (error) {
+      setErrorMessage(error.message || "No pudimos guardar la configuración de tienda.");
+    } finally {
+      setIsSavingStoreSettings(false);
+    }
   }
 
   function updateForm(field, value) {
@@ -344,17 +388,74 @@ function AdminPage() {
       <section className="mt-8">
         <div className="mb-4 flex items-center gap-2">
           <Settings2 className="text-ocean-600" size={19} />
+          <h2 className="font-display text-lg font-bold text-ocean-950">Estado de la tienda</h2>
+        </div>
+        <form className="card space-y-4 p-5" onSubmit={handleSaveStoreSettings}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <span
+                className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] ${
+                  storeOpen
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-amber-100 text-amber-800"
+                }`}
+              >
+                {storeOpen ? "Tienda abierta" : "Tienda cerrada"}
+              </span>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">
+                Si cerrás la tienda, el cliente puede ver el catálogo, pero no puede finalizar
+                pedidos hasta que vuelvas a abrirla.
+              </p>
+            </div>
+            <button
+              className={`toggle ${storeOpen ? "bg-ocean-900" : "bg-slate-200"}`}
+              onClick={() => setStoreOpen((current) => !current)}
+              type="button"
+            >
+              <span className={storeOpen ? "translate-x-5" : "translate-x-0"} />
+            </button>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-sm font-bold text-ocean-950">Horario visible</span>
+              <input
+                className="input-field"
+                onChange={(event) => setOpeningHours(event.target.value)}
+                placeholder="Atendemos de 10:00 a.m. a 10:00 p.m."
+                value={openingHours}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-bold text-ocean-950">
+                Mensaje cuando está cerrada
+              </span>
+              <input
+                className="input-field"
+                onChange={(event) => setClosedMessage(event.target.value)}
+                placeholder="Estamos cerrados por ahora..."
+                value={closedMessage}
+              />
+            </label>
+          </div>
+
+          <button
+            className="button-primary rounded-2xl px-5 py-3"
+            disabled={isSavingStoreSettings}
+            type="submit"
+          >
+            <Save size={18} />
+            {isSavingStoreSettings ? "Guardando..." : "Guardar configuración"}
+          </button>
+        </form>
+      </section>
+
+      <section className="mt-8">
+        <div className="mb-4 flex items-center gap-2">
+          <Settings2 className="text-ocean-600" size={19} />
           <h2 className="font-display text-lg font-bold text-ocean-950">Configuración rápida</h2>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          <ToggleCard
-            active={storeOpen}
-            activeLabel="Abierta para pedidos"
-            icon={Store}
-            inactiveLabel="No recibe pedidos"
-            label="Tienda"
-            onToggle={() => setStoreOpen((current) => !current)}
-          />
+        <div className="grid gap-3 md:grid-cols-2">
           <ToggleCard
             active={deliveryActive}
             activeLabel="Repartos activos"

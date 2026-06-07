@@ -8,6 +8,7 @@ import { products } from "../data/products";
 import { getActiveCategories } from "../services/categoriesService";
 import { createOrder } from "../services/ordersService";
 import { getAvailableProducts } from "../services/productsService";
+import { defaultStoreSettings, getStoreSettings } from "../services/storeSettingsService";
 import { formatCurrency } from "../utils/currency";
 import { calculateOrderTotals } from "../utils/orderTotals";
 
@@ -30,11 +31,20 @@ function ClientePage() {
   const [form, setForm] = useState(initialForm);
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [storeSettings, setStoreSettings] = useState(defaultStoreSettings);
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const { total: cartTotal } = calculateOrderTotals(items);
 
   useEffect(() => {
     let isMounted = true;
+
+    async function loadStoreStatus() {
+      const settings = await getStoreSettings();
+
+      if (isMounted) {
+        setStoreSettings(settings);
+      }
+    }
 
     async function loadCatalog() {
       try {
@@ -68,6 +78,7 @@ function ClientePage() {
       }
     }
 
+    loadStoreStatus();
     loadCatalog();
 
     return () => {
@@ -125,6 +136,15 @@ function ClientePage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setFeedback(null);
+
+    if (!storeSettings.storeOpen) {
+      setFeedback({
+        type: "error",
+        message: storeSettings.closedMessage,
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -157,7 +177,7 @@ function ClientePage() {
           <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center">
             <div>
               <p className="inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-delivery ring-1 ring-white/10">
-                Tienda abierta ahora
+                {storeSettings.storeOpen ? "Tienda abierta ahora" : "Tienda cerrada por ahora"}
               </p>
               <h1 className="mt-5 max-w-2xl font-display text-3xl font-black tracking-tight sm:text-5xl">
                 Pedí tus esenciales de Paracas en minutos
@@ -267,6 +287,22 @@ function ClientePage() {
             {catalogNotice}
           </div>
         )}
+        {!storeSettings.storeOpen && (
+          <div className="my-5 rounded-[1.6rem] border border-amber-100 bg-amber-50 p-5 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+              Tienda cerrada
+            </p>
+            <h2 className="mt-2 font-display text-xl font-black text-ocean-950">
+              No estamos recibiendo pedidos ahora
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-amber-800">
+              {storeSettings.closedMessage}
+            </p>
+            <p className="mt-3 rounded-2xl bg-white/70 px-4 py-3 text-sm font-bold text-ocean-800">
+              {storeSettings.openingHours}
+            </p>
+          </div>
+        )}
 
         <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_390px]">
           <section>
@@ -332,6 +368,7 @@ function ClientePage() {
               feedback={feedback}
               isSubmitting={isSubmitting}
               items={items}
+              storeSettings={storeSettings}
               onFormChange={(event) =>
                 setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
               }

@@ -11,9 +11,11 @@ function Cart({
   onSubmit,
   feedback,
   isSubmitting,
+  storeSettings,
 }) {
   const { subtotal, deliveryFee, total } = calculateOrderTotals(items);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const isStoreOpen = storeSettings?.storeOpen ?? true;
 
   return (
     <aside
@@ -187,12 +189,24 @@ function Cart({
           </div>
         </div>
 
+        {!isStoreOpen && (
+          <div className="mb-4 rounded-[1.35rem] border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
+            <p className="font-display text-base font-black text-ocean-950">Tienda cerrada</p>
+            <p className="mt-1 leading-relaxed">{storeSettings.closedMessage}</p>
+            <p className="mt-2 font-bold text-ocean-800">{storeSettings.openingHours}</p>
+          </div>
+        )}
+
         <button
           className="button-primary w-full rounded-2xl py-4 text-base"
-          disabled={!items.length || isSubmitting}
+          disabled={!items.length || isSubmitting || !isStoreOpen}
           type="submit"
         >
-          {isSubmitting ? "Enviando pedido..." : "Continuar pedido"}
+          {!isStoreOpen
+            ? "Tienda cerrada"
+            : isSubmitting
+              ? "Enviando pedido..."
+              : "Continuar pedido"}
         </button>
         {feedback && (
           <p
