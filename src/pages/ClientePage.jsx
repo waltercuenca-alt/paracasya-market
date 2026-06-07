@@ -8,6 +8,8 @@ import { products } from "../data/products";
 import { getActiveCategories } from "../services/categoriesService";
 import { createOrder } from "../services/ordersService";
 import { getAvailableProducts } from "../services/productsService";
+import { formatCurrency } from "../utils/currency";
+import { calculateOrderTotals } from "../utils/orderTotals";
 
 const allCategory = { id: "all", name: "Todos", short: "ALL", tone: "from-cyan-300 to-blue-500" };
 const initialForm = {
@@ -28,6 +30,8 @@ function ClientePage() {
   const [form, setForm] = useState(initialForm);
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
+  const { total: cartTotal } = calculateOrderTotals(items);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,6 +85,20 @@ function ClientePage() {
           (product.description ?? "").toLowerCase().includes(text)),
     );
   }, [activeCategory, catalogProducts, query]);
+
+  const featuredProducts = useMemo(
+    () =>
+      catalogProducts
+        .filter((product) => product.isFeatured || product.tag === "Destacado")
+        .slice(0, 4),
+    [catalogProducts],
+  );
+
+  const activeCategoryName =
+    activeCategory === "all"
+      ? "Todos los productos"
+      : catalogCategories.find((category) => category.id === activeCategory)?.name ?? "Productos";
+  const showFeaturedSection = activeCategory === "all" && !query.trim() && featuredProducts.length > 0;
 
   function addProduct(product) {
     setFeedback(null);
@@ -149,10 +167,12 @@ function ClientePage() {
                 casa.
               </p>
 
-              <label className="mt-6 flex h-14 max-w-xl items-center gap-3 rounded-2xl bg-white px-4 text-slate-400 shadow-xl shadow-ocean-950/10">
-                <Search size={20} />
+              <label className="mt-6 flex h-16 max-w-xl items-center gap-3 rounded-[1.35rem] bg-white px-4 text-slate-400 shadow-xl shadow-ocean-950/10 ring-1 ring-white/20">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-ocean-50 text-ocean-700">
+                  <Search size={20} />
+                </span>
                 <input
-                  className="w-full bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+                  className="w-full bg-transparent text-base font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Buscar bebidas, comida, snacks..."
                   type="search"
@@ -223,25 +243,61 @@ function ClientePage() {
           </div>
         </section>
 
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-          {[allCategory, ...catalogCategories].map((category) => (
-            <CategoryPill
-              active={activeCategory === category.id}
-              category={category}
-              compact
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-            />
-          ))}
+        <div className="mt-6 rounded-[2rem] border border-white bg-white/80 p-3 shadow-lg shadow-ocean-950/5 backdrop-blur">
+          <div className="mb-3 flex items-center justify-between px-1">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-ocean-600">
+              Categorías
+            </p>
+            <p className="text-xs font-bold text-slate-400">{activeCategoryName}</p>
+          </div>
+          <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+            {[allCategory, ...catalogCategories].map((category) => (
+              <CategoryPill
+                active={activeCategory === category.id}
+                category={category}
+                compact
+                key={category.id}
+                onClick={() => setActiveCategory(category.id)}
+              />
+            ))}
+          </div>
         </div>
         {catalogNotice && (
-          <div className="mb-5 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+          <div className="my-5 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
             {catalogNotice}
           </div>
         )}
 
         <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_390px]">
           <section>
+            {showFeaturedSection && (
+              <div className="mb-8">
+                <div className="mb-4 flex items-end justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="text-delivery-dark" size={20} />
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-ocean-600">
+                        Recomendados
+                      </p>
+                    </div>
+                    <h2 className="mt-1 font-display text-2xl font-black text-ocean-950">
+                      Más pedidos para tu estadía
+                    </h2>
+                  </div>
+                  <span className="hidden rounded-full bg-delivery/30 px-3 py-2 text-xs font-black text-ocean-900 sm:inline-flex">
+                    Favoritos
+                  </span>
+                </div>
+                <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 xl:grid-cols-4">
+                  {featuredProducts.map((product) => (
+                    <div className="min-w-[78%] snap-start sm:min-w-0" key={`featured-${product.id}`}>
+                      <ProductCard onAdd={addProduct} product={product} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -251,7 +307,7 @@ function ClientePage() {
                   </p>
                 </div>
                 <h2 className="mt-1 font-display text-2xl font-black text-ocean-950">
-                  Productos destacados
+                  {activeCategoryName}
                 </h2>
               </div>
               <p className="rounded-full bg-white px-3 py-2 text-sm font-extrabold text-slate-500 shadow-sm">
@@ -288,11 +344,11 @@ function ClientePage() {
 
         {!!items.length && (
           <a
-            className="fixed bottom-5 right-5 z-30 flex items-center gap-2 rounded-full bg-delivery px-5 py-3 font-bold text-ocean-950 shadow-lg shadow-ocean-900/20 lg:hidden"
+            className="fixed bottom-5 left-4 right-4 z-30 flex items-center justify-center gap-2 rounded-full bg-delivery px-5 py-4 font-black text-ocean-950 shadow-lg shadow-ocean-900/20 lg:hidden"
             href="#cart"
           >
             <ShoppingCart size={19} />
-            Ver carrito ({items.reduce((total, item) => total + item.quantity, 0)})
+            Ver pedido ({itemCount}) · {formatCurrency(cartTotal)}
           </a>
         )}
       </div>
