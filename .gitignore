@@ -6,3 +6,4 @@ dist
 !.env.example
 *.local
 npm-debug.log*
+supabase/.temp/
