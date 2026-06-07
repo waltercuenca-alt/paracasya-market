@@ -1,5 +1,6 @@
 import { Bike, LogOut, Plus, RefreshCw, Save, Settings2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import PartnerQrCard from "../components/PartnerQrCard";
 import { clientCategories } from "../data/categories";
 import { products as initialProducts } from "../data/products";
 import {
@@ -26,6 +27,7 @@ import {
 } from "../services/storeSettingsService";
 import { formatCurrency } from "../utils/currency";
 import { clearInternalAccess } from "../utils/internalAccess";
+import { partnerQrTargets } from "../utils/partnerQrData";
 
 const initialForm = {
   id: null,
@@ -512,6 +514,29 @@ function AdminPage() {
               Usar
             </button>
           </form>
+        </div>
+      </section>
+
+      <section className="mt-9">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow">Hoteles y Airbnbs</p>
+            <h2 className="mt-2 font-display text-2xl font-black text-ocean-950">
+              Material QR para hoteles
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
+              Prepará tarjetas para recepción, habitaciones o Airbnbs. Cada QR abre la tienda con
+              el origen listo para asociar el pedido al aliado correcto.
+            </p>
+          </div>
+          <span className="rounded-full bg-ocean-50 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-ocean-700">
+            {partnerQrTargets.length} materiales listos
+          </span>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          {partnerQrTargets.map((partner) => (
+            <PartnerQrCard key={partner.slug} partner={partner} />
+          ))}
         </div>
       </section>
 
