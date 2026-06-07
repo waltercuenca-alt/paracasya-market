@@ -90,6 +90,7 @@ function AdminPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [storeOpen, setStoreOpen] = useState(true);
   const [openingHours, setOpeningHours] = useState(defaultStoreSettings.openingHours);
@@ -121,6 +122,13 @@ function AdminPage() {
       categoryId: firstCategory?.supabaseId ?? "",
     });
   }, [activeCategories, categories]);
+
+  const openCreateProductForm = useCallback(() => {
+    resetForm();
+    setIsProductFormOpen(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+  }, [resetForm]);
 
   const loadCatalog = useCallback(async () => {
     setIsLoading(true);
@@ -240,6 +248,7 @@ function AdminPage() {
       (item) => item.slug === product.category || item.id === product.category,
     );
     setEditingId(product.id);
+    setIsProductFormOpen(true);
     setForm({
       id: product.id,
       name: product.name,
@@ -267,11 +276,28 @@ function AdminPage() {
     }
 
     const category = categories.find((item) => item.slug === form.category || item.id === form.category);
+    const price = Number(form.price);
+
+    if (!form.name.trim()) {
+      setErrorMessage("El nombre del producto es obligatorio.");
+      return;
+    }
+
+    if (Number.isNaN(price) || price < 0) {
+      setErrorMessage("El precio debe ser un numero mayor o igual a 0.");
+      return;
+    }
+
+    if (categories.length && !category) {
+      setErrorMessage("Selecciona una categoria valida para el producto.");
+      return;
+    }
+
     const payload = {
       ...form,
       category: category?.slug ?? form.category,
       categoryId: category?.supabaseId ?? form.categoryId,
-      price: Number(form.price),
+      price,
     };
 
     setIsSaving(true);
@@ -282,10 +308,12 @@ function AdminPage() {
         setSuccessMessage("Producto actualizado en Supabase.");
       } else {
         await createProduct(payload);
-        setSuccessMessage("Producto creado en Supabase.");
+        setSuccessMessage("Producto creado correctamente.");
       }
 
       await loadCatalog();
+      resetForm();
+      setIsProductFormOpen(false);
     } catch (error) {
       setErrorMessage(error.message || "No pudimos guardar el producto.");
     } finally {
@@ -621,22 +649,32 @@ function AdminPage() {
         </div>
       </section>
 
-      <section className="mt-9 grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)]">
+      <section className={`mt-9 grid gap-5 ${isProductFormOpen ? "lg:grid-cols-[390px_minmax(0,1fr)]" : ""}`}>
+        {isProductFormOpen && (
         <form className="card space-y-4 p-5" onSubmit={handleSubmit}>
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-display text-xl font-bold text-ocean-950">
-                {editingId ? "Editar producto" : "Nuevo producto"}
+                {editingId ? "Editar producto" : "Agregar producto nuevo"}
               </h2>
               <p className="text-sm text-slate-400">
-                {isConnected ? "Guarda cambios en Supabase." : "Aplicá SQL para activar escritura real."}
+                {isConnected
+                  ? editingId
+                    ? "Actualiza el producto usando admin-catalog."
+                    : "Crea un producto nuevo usando admin-catalog."
+                  : "Aplicá SQL para activar escritura real."}
               </p>
             </div>
-            {editingId && (
-              <button className="rounded-full p-2 text-slate-400 hover:bg-slate-100" onClick={resetForm} type="button">
-                <X size={18} />
-              </button>
-            )}
+            <button
+              className="rounded-full p-2 text-slate-400 hover:bg-slate-100"
+              onClick={() => {
+                resetForm();
+                setIsProductFormOpen(false);
+              }}
+              type="button"
+            >
+              <X size={18} />
+            </button>
           </div>
 
           <input
@@ -678,9 +716,18 @@ function AdminPage() {
           <input
             className="input-field"
             onChange={(event) => updateForm("imageUrl", event.target.value)}
-            placeholder="image_url manual"
+            placeholder="URL de imagen / image_url"
             value={form.imageUrl}
           />
+          <select
+            className="input-field"
+            onChange={(event) => updateForm("stockStatus", event.target.value)}
+            value={form.stockStatus}
+          >
+            <option value="available">Stock disponible</option>
+            <option value="low_stock">Pocas unidades</option>
+            <option value="out_of_stock">Sin stock</option>
+          </select>
           <div className="grid grid-cols-2 gap-2">
             <label className="cursor-pointer rounded-2xl border border-slate-200 px-3 py-3 text-sm font-bold text-slate-600">
               <input
@@ -703,15 +750,22 @@ function AdminPage() {
           </div>
           <button className="button-primary w-full rounded-2xl py-4" disabled={isSaving} type="submit">
             <Save size={18} />
-            {isSaving ? "Guardando..." : "Guardar en Supabase"}
+            {isSaving ? "Guardando..." : editingId ? "Guardar cambios" : "Crear producto"}
           </button>
         </form>
+        )}
 
         <div className="space-y-5">
           <section>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-xl font-bold text-ocean-950">Productos</h2>
-              <p className="text-sm text-slate-400">{products.length} registrados</p>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-xl font-bold text-ocean-950">Productos</h2>
+                <p className="text-sm text-slate-400">{products.length} registrados</p>
+              </div>
+              <button className="button-primary rounded-2xl px-5 py-3" onClick={openCreateProductForm} type="button">
+                <Plus size={18} />
+                Agregar producto nuevo
+              </button>
             </div>
             <div className="grid gap-3">
               {products.map((product) => (
