@@ -51,7 +51,9 @@ function productPayload(product: Record<string, unknown>) {
     price: Number(product.price ?? 0),
     category_id: product.categoryId || product.category_id || null,
     category_slug: product.category || product.category_slug || null,
-    image_url: product.imageUrl ? String(product.imageUrl).trim() : null,
+    image_url: product.imageUrl || product.image_url
+      ? String(product.imageUrl ?? product.image_url).trim()
+      : null,
     is_available: Boolean(product.available ?? product.isAvailable ?? product.is_available ?? true),
     is_featured: Boolean(product.isFeatured ?? product.is_featured ?? false),
     stock_status: String(product.stockStatus ?? product.stock_status ?? "available"),

@@ -1,15 +1,22 @@
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { formatCurrency } from "../utils/currency";
 
 function ProductCard({ product, onAdd }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const isAvailable = product.available ?? product.isAvailable ?? true;
   const isFeatured = Boolean(product.isFeatured || product.tag === "Destacado");
   const isPromo = product.category === "promo-dia" || product.name?.toLowerCase().includes("promo");
+  const hasImage = Boolean(product.imageUrl && !imageFailed);
   const badges = [
     !isAvailable ? "No disponible" : null,
     isAvailable && isFeatured ? "Popular" : null,
     isAvailable && isPromo ? "Promo" : null,
   ].filter(Boolean);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [product.imageUrl]);
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-white bg-white p-2.5 shadow-[0_18px_45px_rgba(15,42,68,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,42,68,0.14)]">
@@ -18,11 +25,12 @@ function ProductCard({ product, onAdd }) {
       >
         <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/35 blur-xl" />
         <div className="absolute -bottom-10 left-4 h-24 w-24 rounded-full bg-white/30 blur-lg" />
-        {product.imageUrl ? (
+        {hasImage ? (
           <img
             alt={product.name}
             className="relative h-full w-full object-cover transition duration-500 group-hover:scale-105"
             loading="lazy"
+            onError={() => setImageFailed(true)}
             src={product.imageUrl}
           />
         ) : (
