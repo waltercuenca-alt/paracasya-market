@@ -1,27 +1,37 @@
-import { Copy, Printer, QrCode } from "lucide-react";
+import { Copy, Download, Pencil, Printer, QrCode, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   buildPartnerCommercialMessage,
+  buildPartnerQrFilename,
   buildPartnerQrLink,
 } from "../utils/partnerQrData";
 
 async function copyToClipboard(text) {
-  if (navigator?.clipboard?.writeText) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(text);
     return;
   }
 
-  window.prompt("Copiá este texto:", text);
+  window.prompt("Copia este texto:", text);
 }
 
-function createPrintMarkup({ partner, link, qrDataUrl }) {
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function createPrintMarkup({ partner, link, message, qrDataUrl }) {
   return `
     <!doctype html>
     <html lang="es">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>QR ${partner.label}</title>
+        <title>QR ${escapeHtml(partner.label)}</title>
         <style>
           body {
             margin: 0;
@@ -85,11 +95,11 @@ function createPrintMarkup({ partner, link, qrDataUrl }) {
       <body>
         <main class="card">
           <p class="eyebrow">ParacasYa Market</p>
-          <h1>${partner.label}</h1>
-          <p class="cta">Pedi agua, snacks y comida rapida sin salir de tu hotel.</p>
-          <img src="${qrDataUrl}" alt="QR ${partner.label}" />
+          <h1>${escapeHtml(partner.label)}</h1>
+          <p class="cta">${escapeHtml(message)}</p>
+          <img src="${qrDataUrl}" alt="QR ${escapeHtml(partner.label)}" />
           <p>Escanea y hace tu pedido en ParacasYa Market.</p>
-          <p class="link">${link}</p>
+          <p class="link">${escapeHtml(link)}</p>
         </main>
         <script>
           window.onload = () => {
@@ -102,7 +112,100 @@ function createPrintMarkup({ partner, link, qrDataUrl }) {
   `;
 }
 
-function PartnerQrCard({ partner }) {
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function wrapCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = 3) {
+  const words = String(text || "").split(" ");
+  const lines = [];
+  let line = "";
+
+  words.forEach((word) => {
+    const testLine = line ? `${line} ${word}` : word;
+    const metrics = context.measureText(testLine);
+
+    if (metrics.width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+      return;
+    }
+
+    line = testLine;
+  });
+
+  if (line) {
+    lines.push(line);
+  }
+
+  lines.slice(0, maxLines).forEach((currentLine, index) => {
+    context.fillText(currentLine, x, y + index * lineHeight);
+  });
+}
+
+async function createQrCardPng({ partner, link, message, qrDataUrl }) {
+  const canvas = document.createElement("canvas");
+  const width = 1080;
+  const height = 1500;
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  const qrImage = await loadImage(qrDataUrl);
+
+  context.fillStyle = "#f8f3e7";
+  context.fillRect(0, 0, width, height);
+
+  const gradient = context.createLinearGradient(120, 90, 960, 520);
+  gradient.addColorStop(0, "#0f2a44");
+  gradient.addColorStop(0.55, "#0b7894");
+  gradient.addColorStop(1, "#facc15");
+  context.fillStyle = gradient;
+  context.roundRect(80, 80, 920, 520, 58);
+  context.fill();
+
+  context.fillStyle = "#ffffff";
+  context.font = "900 34px Arial";
+  context.letterSpacing = "3px";
+  context.fillText("PARACASYA MARKET", 130, 170);
+
+  context.font = "900 82px Arial";
+  wrapCanvasText(context, partner.label, 130, 285, 820, 92, 2);
+
+  context.font = "700 42px Arial";
+  wrapCanvasText(context, message, 130, 470, 820, 52, 2);
+
+  context.fillStyle = "#ffffff";
+  context.roundRect(210, 650, 660, 660, 48);
+  context.fill();
+  context.drawImage(qrImage, 270, 710, 540, 540);
+
+  context.fillStyle = "#0f2a44";
+  context.font = "900 46px Arial";
+  context.fillText("Pedi sin salir de tu hotel.", 165, 1395);
+
+  context.fillStyle = "#64748b";
+  context.font = "600 28px Arial";
+  wrapCanvasText(context, link, 140, 1450, 800, 34, 2);
+
+  return canvas.toDataURL("image/png");
+}
+
+function downloadDataUrl(dataUrl, filename) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function PartnerQrCard({ onDelete, onEdit, partner }) {
   const [baseUrl, setBaseUrl] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -114,7 +217,8 @@ function PartnerQrCard({ partner }) {
   }, []);
 
   const link = useMemo(() => buildPartnerQrLink(baseUrl, partner.slug), [baseUrl, partner.slug]);
-  const message = useMemo(
+  const message = partner.message || "Pedi agua, snacks y comida rapida sin salir del hotel.";
+  const commercialMessage = useMemo(
     () => buildPartnerCommercialMessage(partner, link),
     [partner, link],
   );
@@ -159,26 +263,54 @@ function PartnerQrCard({ partner }) {
   }
 
   async function handleCopyMessage() {
-    await copyToClipboard(message);
+    await copyToClipboard(commercialMessage);
     setFeedback("Mensaje copiado.");
+  }
+
+  async function handleDownloadPng() {
+    if (!qrDataUrl) {
+      setFeedback("Espera a que cargue el QR.");
+      return;
+    }
+
+    try {
+      const dataUrl = await createQrCardPng({ partner, link, message, qrDataUrl });
+      downloadDataUrl(dataUrl, buildPartnerQrFilename(partner));
+      setFeedback("PNG descargado.");
+    } catch (error) {
+      console.error("No se pudo descargar el PNG:", error);
+      setFeedback("No se pudo generar el PNG.");
+    }
   }
 
   function handlePrint() {
     if (!qrDataUrl) {
-      setFeedback("Esperá a que cargue el QR.");
+      setFeedback("Espera a que cargue el QR.");
       return;
     }
 
     const printWindow = window.open("", "_blank", "noopener,noreferrer");
 
     if (!printWindow) {
-      setFeedback("No se pudo abrir la ventana de impresión.");
+      setFeedback("No se pudo abrir la ventana de impresion.");
       return;
     }
 
-    printWindow.document.write(createPrintMarkup({ partner, link, qrDataUrl }));
+    printWindow.document.write(createPrintMarkup({ partner, link, message, qrDataUrl }));
     printWindow.document.close();
     setFeedback("Tarjeta lista para imprimir.");
+  }
+
+  function handleDelete() {
+    if (!onDelete) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Eliminar el material QR de ${partner.label}?`);
+
+    if (confirmed) {
+      onDelete(partner.id);
+    }
   }
 
   return (
@@ -187,7 +319,7 @@ function PartnerQrCard({ partner }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-delivery">
-              Material QR
+              {partner.isBase ? "Material base" : "Material personalizado"}
             </p>
             <h3 className="mt-2 font-display text-xl font-black">{partner.label}</h3>
             <p className="mt-1 text-xs font-semibold text-white/70">{partner.slug}</p>
@@ -197,11 +329,9 @@ function PartnerQrCard({ partner }) {
           </span>
         </div>
 
-        <p className="mt-4 text-sm font-bold leading-relaxed">
-          Pedí agua, snacks y comida rápida sin salir de tu hotel.
-        </p>
+        <p className="mt-4 text-sm font-bold leading-relaxed">{message}</p>
         <p className="mt-1 text-xs leading-relaxed text-white/70">
-          Escaneá y hacé tu pedido en ParacasYa Market.
+          Escanea y hace tu pedido en ParacasYa Market.
         </p>
       </div>
 
@@ -228,7 +358,7 @@ function PartnerQrCard({ partner }) {
         </p>
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <button className="button-secondary justify-center px-3 py-3 text-xs" onClick={handleCopyLink} type="button">
           <Copy size={15} />
           Copiar link
@@ -237,11 +367,32 @@ function PartnerQrCard({ partner }) {
           <Copy size={15} />
           Copiar mensaje
         </button>
+        <button className="button-secondary justify-center px-3 py-3 text-xs" onClick={handleDownloadPng} type="button">
+          <Download size={15} />
+          Descargar PNG
+        </button>
         <button className="button-primary justify-center rounded-2xl px-3 py-3 text-xs" onClick={handlePrint} type="button">
           <Printer size={15} />
           Imprimir
         </button>
       </div>
+
+      {!partner.isBase && (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <button className="button-secondary justify-center px-3 py-3 text-xs" onClick={() => onEdit?.(partner)} type="button">
+            <Pencil size={15} />
+            Editar
+          </button>
+          <button
+            className="justify-center rounded-2xl border border-rose-100 bg-rose-50 px-3 py-3 text-xs font-black text-rose-700 transition hover:bg-rose-100"
+            onClick={handleDelete}
+            type="button"
+          >
+            <Trash2 size={15} />
+            Eliminar
+          </button>
+        </div>
+      )}
 
       {feedback && <p className="mt-3 text-center text-xs font-bold text-ocean-700">{feedback}</p>}
     </article>

@@ -1,6 +1,7 @@
 import { Bike, LogOut, Plus, RefreshCw, Save, Settings2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PartnerQrCard from "../components/PartnerQrCard";
+import PartnerQrCreator from "../components/PartnerQrCreator";
 import { clientCategories } from "../data/categories";
 import { products as initialProducts } from "../data/products";
 import {
@@ -27,7 +28,11 @@ import {
 } from "../services/storeSettingsService";
 import { formatCurrency } from "../utils/currency";
 import { clearInternalAccess } from "../utils/internalAccess";
-import { partnerQrTargets } from "../utils/partnerQrData";
+import {
+  partnerQrTargets,
+  readCustomPartnerQrMaterials,
+  saveCustomPartnerQrMaterials,
+} from "../utils/partnerQrData";
 
 const initialForm = {
   id: null,
@@ -94,10 +99,17 @@ function AdminPage() {
   const [deliveryFee, setDeliveryFee] = useState("5.00");
   const [adminToken, setAdminToken] = useState(getAdminCatalogToken);
   const [newCategory, setNewCategory] = useState({ name: "", slug: "", icon: "" });
+  const [customPartnerMaterials, setCustomPartnerMaterials] = useState([]);
+  const [editingPartnerMaterial, setEditingPartnerMaterial] = useState(null);
 
   const activeCategories = useMemo(
     () => categories.filter((category) => category.isActive),
     [categories],
+  );
+
+  const partnerQrMaterials = useMemo(
+    () => [...partnerQrTargets, ...customPartnerMaterials],
+    [customPartnerMaterials],
   );
 
   const resetForm = useCallback(() => {
@@ -160,6 +172,10 @@ function AdminPage() {
     loadCatalog();
     loadStoreSettings();
   }, [loadCatalog, loadStoreSettings]);
+
+  useEffect(() => {
+    setCustomPartnerMaterials(readCustomPartnerQrMaterials());
+  }, []);
 
   useEffect(() => {
     resetForm();
@@ -351,6 +367,49 @@ function AdminPage() {
     }
   }
 
+  function persistPartnerMaterials(nextMaterials) {
+    setCustomPartnerMaterials(nextMaterials);
+    saveCustomPartnerQrMaterials(nextMaterials);
+  }
+
+  function handleSavePartnerMaterial(material) {
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    const existingMaterial = partnerQrMaterials.find(
+      (item) => item.slug === material.slug && item.id !== material.id,
+    );
+
+    if (existingMaterial) {
+      setErrorMessage(`Ya existe un material QR con el origen ${material.slug}.`);
+      return;
+    }
+
+    const nextMaterials = customPartnerMaterials.some((item) => item.id === material.id)
+      ? customPartnerMaterials.map((item) => (item.id === material.id ? material : item))
+      : [...customPartnerMaterials, material];
+
+    persistPartnerMaterials(nextMaterials);
+    setEditingPartnerMaterial(null);
+    setSuccessMessage(
+      customPartnerMaterials.some((item) => item.id === material.id)
+        ? "Material QR actualizado en este navegador."
+        : "Material QR creado en este navegador.",
+    );
+  }
+
+  function handleDeletePartnerMaterial(materialId) {
+    const nextMaterials = customPartnerMaterials.filter((item) => item.id !== materialId);
+    persistPartnerMaterials(nextMaterials);
+
+    if (editingPartnerMaterial?.id === materialId) {
+      setEditingPartnerMaterial(null);
+    }
+
+    setSuccessMessage("Material QR eliminado de este navegador.");
+    setErrorMessage("");
+  }
+
   return (
     <div className="page-container pb-14 pt-8 sm:pt-10">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -530,12 +589,34 @@ function AdminPage() {
             </p>
           </div>
           <span className="rounded-full bg-ocean-50 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-ocean-700">
-            {partnerQrTargets.length} materiales listos
+            {partnerQrMaterials.length} materiales listos
           </span>
         </div>
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-          {partnerQrTargets.map((partner) => (
-            <PartnerQrCard key={partner.slug} partner={partner} />
+
+        <PartnerQrCreator
+          editingMaterial={editingPartnerMaterial}
+          onCancelEdit={() => setEditingPartnerMaterial(null)}
+          onSave={handleSavePartnerMaterial}
+        />
+
+        <div className="mt-5 rounded-[2rem] border border-ocean-100 bg-ocean-50 p-4">
+          <p className="text-sm font-bold text-ocean-950">
+            Los materiales personalizados se guardan en localStorage de este navegador.
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-ocean-700">
+            Los aliados base siguen fijos; los nuevos materiales se pueden editar, eliminar,
+            copiar, imprimir y descargar como PNG.
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          {partnerQrMaterials.map((partner) => (
+            <PartnerQrCard
+              key={partner.id}
+              onDelete={handleDeletePartnerMaterial}
+              onEdit={setEditingPartnerMaterial}
+              partner={partner}
+            />
           ))}
         </div>
       </section>
