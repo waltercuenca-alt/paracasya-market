@@ -15,13 +15,98 @@ import { calculateOrderTotals } from "../utils/orderTotals";
 import { resolveOrderOriginFromUrl } from "../utils/orderOrigin";
 
 const allCategory = { id: "all", name: "Todos", short: "ALL", tone: "from-cyan-300 to-blue-500" };
+const lastOrderReceiptKey = "paracasya_last_order_receipt";
 const initialForm = {
   name: "",
   whatsapp: "",
   address: "",
   reference: "",
+  comments: "",
   payment: "Yape",
 };
+
+function buildStoredOrderReceipt(order) {
+  return {
+    created_at: order.createdAt,
+    customer_name: order.customerName,
+    customer_phone: order.customerPhone,
+    delivery_fee: order.totals.deliveryFee,
+    delivery_notes: order.deliveryNotes,
+    items: order.items.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      total_price: item.price * item.quantity,
+      unit_price: item.price,
+    })),
+    location_name: order.address,
+    order_code: order.orderCode,
+    order_origin_label: order.originLabel,
+    payment_method: order.paymentMethod,
+    room_reference: order.reference,
+    subtotal: order.totals.subtotal,
+    total: order.totals.total,
+  };
+}
+
+function parseStoredOrderReceipt(payload) {
+  if (!payload?.order_code) {
+    return null;
+  }
+
+  const items = Array.isArray(payload.items) ? payload.items : [];
+
+  return {
+    address: payload.location_name ?? "",
+    createdAt: payload.created_at ?? "",
+    customerName: payload.customer_name ?? "",
+    customerPhone: payload.customer_phone ?? "",
+    deliveryNotes: payload.delivery_notes ?? "",
+    items: items.map((item, index) => ({
+      id: `stored-${index}-${item.name ?? "producto"}`,
+      name: item.name ?? "Producto",
+      price: Number(item.unit_price ?? 0),
+      quantity: Number(item.quantity ?? 0),
+      totalPrice: Number(item.total_price ?? 0),
+    })),
+    orderCode: payload.order_code,
+    originLabel: payload.order_origin_label ?? "",
+    paymentMethod: payload.payment_method ?? "",
+    reference: payload.room_reference ?? "",
+    totals: {
+      deliveryFee: Number(payload.delivery_fee ?? 0),
+      subtotal: Number(payload.subtotal ?? 0),
+      total: Number(payload.total ?? 0),
+    },
+  };
+}
+
+function readLastOrderReceipt() {
+  if (typeof localStorage === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = localStorage.getItem(lastOrderReceiptKey);
+    return raw ? parseStoredOrderReceipt(JSON.parse(raw)) : null;
+  } catch (error) {
+    console.error("No se pudo leer el ultimo comprobante guardado:", error);
+    return null;
+  }
+}
+
+function saveLastOrderReceipt(order) {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+
+  localStorage.setItem(lastOrderReceiptKey, JSON.stringify(buildStoredOrderReceipt(order)));
+}
+
+function clearLastOrderReceipt() {
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(lastOrderReceiptKey);
+  }
+}
 
 function ClientePage() {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -33,6 +118,8 @@ function ClientePage() {
   const [form, setForm] = useState(initialForm);
   const [feedback, setFeedback] = useState(null);
   const [successOrder, setSuccessOrder] = useState(null);
+  const [lastOrderReceipt, setLastOrderReceipt] = useState(null);
+  const [shouldScrollToCatalog, setShouldScrollToCatalog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [storeSettings, setStoreSettings] = useState(defaultStoreSettings);
   const [orderOrigin, setOrderOrigin] = useState(null);
@@ -46,6 +133,8 @@ function ClientePage() {
     if (origin) {
       setOrderOrigin(origin);
     }
+
+    setLastOrderReceipt(readLastOrderReceipt());
 
     async function loadStoreStatus() {
       const settings = await getStoreSettings();
@@ -94,6 +183,18 @@ function ClientePage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!shouldScrollToCatalog || successOrder) {
+      return;
+    }
+
+    document.getElementById("catalogo-cliente")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    setShouldScrollToCatalog(false);
+  }, [shouldScrollToCatalog, successOrder]);
 
   const filteredProducts = useMemo(() => {
     const text = query.toLowerCase().trim();
@@ -163,17 +264,22 @@ function ClientePage() {
       const submittedItems = items.map((item) => ({ ...item }));
       const totals = calculateOrderTotals(submittedItems);
       const order = await createOrder({ form, items, origin: orderOrigin });
-      setSuccessOrder({
+      const receiptOrder = {
+        createdAt: new Date().toISOString(),
         orderCode: order.orderCode,
         customerName: submittedForm.name,
         customerPhone: submittedForm.whatsapp,
         address: submittedForm.address,
         reference: submittedForm.reference,
+        deliveryNotes: submittedForm.comments.trim(),
         paymentMethod: submittedForm.payment,
         items: submittedItems,
         totals,
         originLabel: orderOrigin?.label ?? "",
-      });
+      };
+      saveLastOrderReceipt(receiptOrder);
+      setLastOrderReceipt(receiptOrder);
+      setSuccessOrder(receiptOrder);
       setItems([]);
       setForm(initialForm);
     } catch (error) {
@@ -195,11 +301,43 @@ function ClientePage() {
     window.scrollTo({ behavior: "smooth", top: 0 });
   }
 
+  function handleShowLastOrder() {
+    if (!lastOrderReceipt) {
+      return;
+    }
+
+    setFeedback(null);
+    setSuccessOrder(lastOrderReceipt);
+    window.scrollTo({ behavior: "smooth", top: 0 });
+  }
+
+  function handleDeleteLastOrderReceipt() {
+    clearLastOrderReceipt();
+    setLastOrderReceipt(null);
+    setSuccessOrder(null);
+    setFeedback(null);
+  }
+
   function handleBackToStore() {
-    document.getElementById("catalogo-cliente")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    setSuccessOrder(null);
+    setShouldScrollToCatalog(true);
+  }
+
+  if (successOrder) {
+    return (
+      <div className="client-success-view">
+        <div className="order-success-page">
+          <div className="order-success-page-inner">
+            <OrderSuccessReceipt
+              onDeleteStoredReceipt={lastOrderReceipt ? handleDeleteLastOrderReceipt : null}
+              onBackToStore={handleBackToStore}
+              onNewOrder={handleNewOrder}
+              order={successOrder}
+            />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -345,12 +483,28 @@ function ClientePage() {
           </div>
         )}
 
-        {successOrder && (
-          <OrderSuccessReceipt
-            onBackToStore={handleBackToStore}
-            onNewOrder={handleNewOrder}
-            order={successOrder}
-          />
+        {lastOrderReceipt && !successOrder && (
+          <section className="last-order-card">
+            <div>
+              <p className="last-order-eyebrow">Comprobante local</p>
+              <h2>¿Ya hiciste un pedido?</h2>
+              <p>
+                Podés volver a ver el último pedido realizado desde este celular.
+              </p>
+              <p className="last-order-note">
+                Este comprobante solo se guarda en este celular. El pedido real sigue registrado
+                en ParacasYa Market.
+              </p>
+            </div>
+            <div className="last-order-actions">
+              <button className="primary" onClick={handleShowLastOrder} type="button">
+                Ver mi último pedido
+              </button>
+              <button onClick={handleDeleteLastOrderReceipt} type="button">
+                Eliminar comprobante de este celular
+              </button>
+            </div>
+          </section>
         )}
 
         <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_390px]">

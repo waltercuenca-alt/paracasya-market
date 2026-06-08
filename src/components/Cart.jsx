@@ -152,6 +152,20 @@ function Cart({
             placeholder="Habitación o referencia"
             value={form.reference}
           />
+          <label className="grid gap-2">
+            <span className="text-sm font-extrabold text-ocean-900">Comentarios del pedido</span>
+            <textarea
+              className="input-field min-h-28 resize-none"
+              maxLength={300}
+              name="comments"
+              onChange={onFormChange}
+              placeholder="Ej: arepa de pollo, sin cebolla, entregar en recepcion..."
+              value={form.comments}
+            />
+            <span className="text-xs font-semibold leading-relaxed text-slate-500">
+              Opcional. Podes aclarar sabores, preferencias o indicaciones de entrega.
+            </span>
+          </label>
           <div className="grid grid-cols-2 gap-2">
             {["Yape", "Efectivo"].map((method) => (
               <label

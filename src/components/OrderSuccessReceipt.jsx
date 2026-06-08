@@ -1,5 +1,26 @@
-import { CheckCircle2, ClipboardList, MapPin, MessageCircle, ShoppingBag } from "lucide-react";
+import {
+  CheckCircle2,
+  Clipboard,
+  ClipboardCheck,
+  Clock3,
+  MapPin,
+  MessageCircle,
+  PackageCheck,
+  ShieldCheck,
+  ShoppingBag,
+  Truck,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import { formatCurrency } from "../utils/currency";
+
+const supportWhatsappNumber = "";
+
+const receiptSteps = [
+  { icon: CheckCircle2, label: "Pedido recibido", active: true },
+  { icon: MessageCircle, label: "Confirmacion por WhatsApp", active: false },
+  { icon: PackageCheck, label: "Preparacion", active: false },
+  { icon: Truck, label: "Entrega", active: false },
+];
 
 function ReceiptLine({ label, value }) {
   if (!value) {
@@ -7,135 +28,203 @@ function ReceiptLine({ label, value }) {
   }
 
   return (
-    <div className="flex justify-between gap-4 border-b border-slate-100 py-2 text-sm last:border-0">
-      <span className="font-semibold text-slate-500">{label}</span>
-      <span className="text-right font-bold text-ocean-950">{value}</span>
+    <div className="order-success-detail-row">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
 
-function OrderSuccessReceipt({ order, onNewOrder, onBackToStore }) {
+async function copyText(value) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  window.prompt("Copia este codigo:", value);
+}
+
+function buildSupportWhatsappUrl(orderCode) {
+  if (!supportWhatsappNumber) {
+    return null;
+  }
+
+  const message = `Hola ParacasYa Market, acabo de hacer el pedido ${orderCode}. Quisiera confirmar disponibilidad y entrega.`;
+  return `https://wa.me/${supportWhatsappNumber}?text=${encodeURIComponent(message)}`;
+}
+
+function formatDeliveryFee(value) {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return "Por confirmar";
+  }
+
+  return formatCurrency(amount);
+}
+
+function OrderSuccessReceipt({ order, onNewOrder, onBackToStore, onDeleteStoredReceipt }) {
+  const [copyLabel, setCopyLabel] = useState("Copiar codigo");
+
+  const supportWhatsappUrl = useMemo(
+    () => buildSupportWhatsappUrl(order?.orderCode),
+    [order?.orderCode],
+  );
+
   if (!order) {
     return null;
   }
 
+  async function handleCopyCode() {
+    await copyText(order.orderCode);
+    setCopyLabel("Codigo copiado");
+    window.setTimeout(() => setCopyLabel("Copiar codigo"), 1800);
+  }
+
   return (
-    <section className="mb-7 overflow-hidden rounded-[2.2rem] border border-emerald-100 bg-white shadow-2xl shadow-ocean-950/10">
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-ocean-700 to-ocean-950 px-5 py-7 text-white sm:px-7">
-        <div className="absolute -right-14 -top-16 h-44 w-44 rounded-full bg-delivery/25 blur-3xl" />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-3xl bg-white text-emerald-600 shadow-lg shadow-ocean-950/20">
-              <CheckCircle2 size={31} strokeWidth={2.6} />
-            </span>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-delivery">
-                Confirmacion
-              </p>
-              <h2 className="mt-2 font-display text-3xl font-black">Pedido recibido</h2>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-emerald-50">
-                Ya registramos tu pedido. Te confirmaremos por WhatsApp en breve.
-              </p>
-            </div>
+    <section className="order-success-premium">
+      <div className="order-success-card">
+        <div className="order-success-header">
+          <div className="order-success-check">
+            <CheckCircle2 size={38} strokeWidth={2.6} />
           </div>
-          <div className="rounded-[1.4rem] bg-white/12 px-4 py-3 ring-1 ring-white/15">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">
-              Codigo de pedido
+          <div className="min-w-0 flex-1">
+            <p className="order-success-eyebrow">Comprobante de pedido</p>
+            <h2>Pedido recibido</h2>
+            <p className="order-success-lead">Tu pedido fue registrado correctamente.</p>
+            <p className="order-success-copy">
+              Estamos revisando disponibilidad y tiempo de entrega. Te confirmaremos por WhatsApp
+              antes de prepararlo.
             </p>
-            <p className="mt-1 font-display text-xl font-black text-delivery">{order.orderCode}</p>
           </div>
         </div>
-      </div>
 
-      <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-5">
-          {order.originLabel && (
-            <div className="rounded-[1.4rem] border border-ocean-100 bg-ocean-50 px-4 py-3 text-sm font-bold text-ocean-800">
-              Pedido asociado a: <span className="text-ocean-950">{order.originLabel}</span>
-            </div>
-          )}
+        <div className="order-success-code">
+          <div>
+            <span>Codigo de pedido</span>
+            <strong>{order.orderCode}</strong>
+          </div>
+          <button onClick={handleCopyCode} type="button">
+            {copyLabel === "Codigo copiado" ? <ClipboardCheck size={17} /> : <Clipboard size={17} />}
+            {copyLabel}
+          </button>
+        </div>
 
-          <div className="rounded-[1.6rem] border border-slate-100 bg-slate-50/70 p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <MapPin className="text-ocean-600" size={18} />
-              <h3 className="font-display text-lg font-black text-ocean-950">
-                Datos de entrega
-              </h3>
+        <p className="order-success-local-note">
+          Este comprobante solo se guarda en este celular. El pedido real sigue registrado en
+          ParacasYa Market.
+        </p>
+
+        <div className="order-success-steps">
+          {receiptSteps.map((step) => {
+            const Icon = step.icon;
+            return (
+              <div className={step.active ? "active" : ""} key={step.label}>
+                <span>
+                  <Icon size={16} />
+                </span>
+                <p>{step.label}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="order-success-grid">
+          <div className="space-y-4">
+            <div className="order-success-section">
+              <div className="order-success-section-title">
+                <MapPin size={19} />
+                <h3>Entrega solicitada</h3>
+              </div>
+              {order.originLabel && (
+                <div className="order-success-origin">
+                  Pedido asociado a: <strong>{order.originLabel}</strong>
+                </div>
+              )}
+              <ReceiptLine label="Cliente" value={order.customerName} />
+              <ReceiptLine label="WhatsApp" value={order.customerPhone} />
+              <ReceiptLine label="Hotel, Airbnb o direccion" value={order.address} />
+              <ReceiptLine label="Habitacion o referencia" value={order.reference} />
+              <ReceiptLine label="Metodo de pago" value={order.paymentMethod} />
+              {order.deliveryNotes && (
+                <div className="order-success-comments">
+                  <span>Comentarios</span>
+                  <p>{order.deliveryNotes}</p>
+                </div>
+              )}
+              <p className="order-success-help">
+                Lo enviaremos al hotel, habitacion o direccion indicada una vez confirmado por
+                nuestro equipo.
+              </p>
             </div>
-            <ReceiptLine label="Cliente" value={order.customerName} />
-            <ReceiptLine label="WhatsApp" value={order.customerPhone} />
-            <ReceiptLine label="Destino" value={order.address} />
-            <ReceiptLine label="Habitacion / referencia" value={order.reference} />
-            <ReceiptLine label="Metodo de pago" value={order.paymentMethod} />
+
+            <div className="order-success-warning">
+              <ShieldCheck size={20} />
+              <p>
+                No pagues hasta recibir la confirmacion oficial por WhatsApp de ParacasYa Market.
+              </p>
+            </div>
           </div>
 
-          <div className="rounded-[1.6rem] border border-slate-100 bg-white p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <ClipboardList className="text-ocean-600" size={18} />
-              <h3 className="font-display text-lg font-black text-ocean-950">
-                Resumen del pedido
-              </h3>
+          <aside className="order-success-section order-success-ticket">
+            <div className="order-success-section-title">
+              <ShoppingBag size={19} />
+              <h3>Resumen del pedido</h3>
             </div>
-            <div className="space-y-2">
+
+            <div className="order-success-items">
               {order.items.map((item) => (
-                <div
-                  className="flex justify-between gap-3 rounded-2xl bg-sand-50 px-3 py-2 text-sm"
-                  key={`${item.id}-${item.name}`}
-                >
-                  <span className="font-bold text-ocean-950">
-                    {item.quantity} x {item.name}
+                <div key={`${item.id}-${item.name}`}>
+                  <span>
+                    {item.quantity}x {item.name}
                   </span>
-                  <span className="font-black text-ocean-800">
-                    {formatCurrency(item.price * item.quantity)}
-                  </span>
+                  <strong>{formatCurrency(item.totalPrice ?? item.price * item.quantity)}</strong>
                 </div>
               ))}
             </div>
-          </div>
+
+            <div className="order-success-totals">
+              <div>
+                <span>Subtotal</span>
+                <strong>{formatCurrency(order.totals.subtotal)}</strong>
+              </div>
+              <div>
+                <span>Delivery</span>
+                <strong>{formatDeliveryFee(order.totals.deliveryFee)}</strong>
+              </div>
+              <div className="order-success-total">
+                <span>Total</span>
+                <strong>{formatCurrency(order.totals.total)}</strong>
+              </div>
+            </div>
+          </aside>
         </div>
 
-        <aside className="rounded-[1.8rem] bg-ocean-950 p-5 text-white shadow-xl shadow-ocean-950/15">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="text-delivery" size={20} />
-            <h3 className="font-display text-lg font-black">Total confirmado</h3>
-          </div>
-
-          <div className="mt-5 space-y-3 text-sm">
-            <div className="flex justify-between text-blue-100">
-              <span>Subtotal</span>
-              <span>{formatCurrency(order.totals.subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-blue-100">
-              <span>Delivery</span>
-              <span>{formatCurrency(order.totals.deliveryFee)}</span>
-            </div>
-            <div className="flex justify-between border-t border-white/15 pt-4 font-display text-3xl font-black text-delivery">
-              <span>Total</span>
-              <span>{formatCurrency(order.totals.total)}</span>
-            </div>
-          </div>
-
-          <div className="mt-5 rounded-[1.3rem] bg-white/10 p-4 text-sm leading-relaxed text-blue-50 ring-1 ring-white/10">
-            Lo enviaremos al hotel, habitacion o direccion indicada una vez confirmado.
-          </div>
-          <div className="mt-3 rounded-[1.3rem] border border-delivery/30 bg-delivery/15 p-4 text-sm font-bold leading-relaxed text-delivery">
-            No pagues hasta recibir la confirmacion del equipo de ParacasYa Market.
-          </div>
-
-          <div className="mt-5 grid gap-2">
-            <button className="button-primary rounded-2xl py-3" onClick={onNewOrder} type="button">
+        <div className="order-success-actions">
+          {supportWhatsappUrl ? (
+            <a href={supportWhatsappUrl} rel="noopener noreferrer" target="_blank">
               <MessageCircle size={18} />
-              Hacer otro pedido
+              Consultar por WhatsApp
+            </a>
+          ) : (
+            <button disabled type="button">
+              <MessageCircle size={18} />
+              WhatsApp de soporte pendiente
             </button>
-            <button
-              className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/15"
-              onClick={onBackToStore}
-              type="button"
-            >
-              Volver a la tienda
+          )}
+          <button className="primary" onClick={onNewOrder} type="button">
+            <Clock3 size={18} />
+            Hacer otro pedido
+          </button>
+          <button onClick={onBackToStore} type="button">
+            Seguir viendo productos
+          </button>
+          {onDeleteStoredReceipt && (
+            <button className="danger" onClick={onDeleteStoredReceipt} type="button">
+              Eliminar comprobante de este celular
             </button>
-          </div>
-        </aside>
+          )}
+        </div>
       </div>
     </section>
   );

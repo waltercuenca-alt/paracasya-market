@@ -1,4 +1,4 @@
-import { MapPin, MessageCircle, ReceiptText, Tag } from "lucide-react";
+import { MessageSquareText, MapPin, MessageCircle, ReceiptText, Tag } from "lucide-react";
 import { validOrderStatuses } from "../services/ordersService";
 import { formatCurrency } from "../utils/currency";
 import { buildOrderWhatsappUrl } from "../utils/whatsapp";
@@ -42,6 +42,14 @@ function OrderCard({ order, onStatusChange, isUpdating }) {
               {order.origin && order.originLabel && (
                 <span className="text-slate-400"> · QR: {order.origin}</span>
               )}
+            </p>
+          </div>
+        )}
+        {order.deliveryNotes && (
+          <div className="flex gap-2 rounded-2xl border border-amber-100 bg-amber-50 p-3 text-amber-900 sm:col-span-2">
+            <MessageSquareText className="mt-0.5 shrink-0 text-amber-600" size={16} />
+            <p>
+              <span className="font-black">Comentarios del cliente:</span> {order.deliveryNotes}
             </p>
           </div>
         )}
