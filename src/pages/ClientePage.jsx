@@ -2,6 +2,7 @@ import { Clock3, MapPin, Search, ShieldCheck, ShoppingCart, Sparkles, Truck } fr
 import { useEffect, useMemo, useState } from "react";
 import Cart from "../components/Cart";
 import CategoryPill from "../components/CategoryPill";
+import OrderSuccessReceipt from "../components/OrderSuccessReceipt";
 import ProductCard from "../components/ProductCard";
 import { clientCategories } from "../data/categories";
 import { products } from "../data/products";
@@ -31,6 +32,7 @@ function ClientePage() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [feedback, setFeedback] = useState(null);
+  const [successOrder, setSuccessOrder] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [storeSettings, setStoreSettings] = useState(defaultStoreSettings);
   const [orderOrigin, setOrderOrigin] = useState(null);
@@ -120,6 +122,7 @@ function ClientePage() {
 
   function addProduct(product) {
     setFeedback(null);
+    setSuccessOrder(null);
     setItems((current) => {
       const existing = current.find((item) => item.id === product.id);
       return existing
@@ -143,6 +146,7 @@ function ClientePage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setFeedback(null);
+    setSuccessOrder(null);
 
     if (!storeSettings.storeOpen) {
       setFeedback({
@@ -155,13 +159,23 @@ function ClientePage() {
     setIsSubmitting(true);
 
     try {
+      const submittedForm = { ...form };
+      const submittedItems = items.map((item) => ({ ...item }));
+      const totals = calculateOrderTotals(submittedItems);
       const order = await createOrder({ form, items, origin: orderOrigin });
+      setSuccessOrder({
+        orderCode: order.orderCode,
+        customerName: submittedForm.name,
+        customerPhone: submittedForm.whatsapp,
+        address: submittedForm.address,
+        reference: submittedForm.reference,
+        paymentMethod: submittedForm.payment,
+        items: submittedItems,
+        totals,
+        originLabel: orderOrigin?.label ?? "",
+      });
       setItems([]);
       setForm(initialForm);
-      setFeedback({
-        type: "success",
-        message: `Pedido ${order.orderCode} enviado correctamente. Pronto lo confirmaremos.`,
-      });
     } catch (error) {
       console.error("No se pudo enviar el pedido:", error);
       setFeedback({
@@ -171,6 +185,21 @@ function ClientePage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleNewOrder() {
+    setItems([]);
+    setForm(initialForm);
+    setFeedback(null);
+    setSuccessOrder(null);
+    window.scrollTo({ behavior: "smooth", top: 0 });
+  }
+
+  function handleBackToStore() {
+    document.getElementById("catalogo-cliente")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
   return (
@@ -316,8 +345,16 @@ function ClientePage() {
           </div>
         )}
 
+        {successOrder && (
+          <OrderSuccessReceipt
+            onBackToStore={handleBackToStore}
+            onNewOrder={handleNewOrder}
+            order={successOrder}
+          />
+        )}
+
         <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_390px]">
-          <section>
+          <section id="catalogo-cliente">
             {showFeaturedSection && (
               <div className="mb-8">
                 <div className="mb-4 flex items-end justify-between gap-4">
