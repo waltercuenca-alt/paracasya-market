@@ -10,16 +10,17 @@ import {
   ShoppingBag,
   Truck,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getOrderStatus } from "../services/ordersService";
 import { formatCurrency } from "../utils/currency";
 
 const supportWhatsappNumber = "";
 
 const receiptSteps = [
-  { icon: CheckCircle2, label: "Pedido recibido", active: true },
-  { icon: MessageCircle, label: "Confirmacion por WhatsApp", active: false },
-  { icon: PackageCheck, label: "Preparacion", active: false },
-  { icon: Truck, label: "Entrega", active: false },
+  { icon: CheckCircle2, label: "Pedido recibido" },
+  { icon: MessageCircle, label: "Confirmacion por WhatsApp" },
+  { icon: PackageCheck, label: "Preparacion" },
+  { icon: Truck, label: "Entrega" },
 ];
 
 function ReceiptLine({ label, value }) {
@@ -63,13 +64,161 @@ function formatDeliveryFee(value) {
   return formatCurrency(amount);
 }
 
+function normalizeStatus(status) {
+  return String(status ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\s-]+/g, "_");
+}
+
+function getProgressIndex(status) {
+  const normalizedStatus = normalizeStatus(status);
+
+  if (["confirmado", "confirmed"].includes(normalizedStatus)) {
+    return 1;
+  }
+
+  if (["preparando", "preparing", "processing"].includes(normalizedStatus)) {
+    return 2;
+  }
+
+  if (["en_camino", "on_the_way", "entregado", "delivered"].includes(normalizedStatus)) {
+    return 3;
+  }
+
+  return 0;
+}
+
+function isTerminalStatus(status) {
+  return ["entregado", "delivered", "cancelado", "cancelled", "canceled"].includes(
+    normalizeStatus(status),
+  );
+}
+
+function getStatusText(status) {
+  const normalizedStatus = normalizeStatus(status);
+
+  if (["entregado", "delivered"].includes(normalizedStatus)) {
+    return "Pedido entregado. Gracias por usar ParacasYa Market.";
+  }
+
+  if (["cancelado", "cancelled", "canceled"].includes(normalizedStatus)) {
+    return "Pedido cancelado. Contacta con ParacasYa Market si necesitas ayuda.";
+  }
+
+  return "Estado actualizado desde caja.";
+}
+
+function getStatusPresentation(status) {
+  const normalizedStatus = normalizeStatus(status);
+
+  if (["confirmado", "confirmed"].includes(normalizedStatus)) {
+    return {
+      eyebrow: "Paso 2 de 4",
+      title: "Tu pedido fue confirmado",
+      description: "Ya confirmamos tu pedido. Pronto lo prepararemos.",
+      tone: "confirmed",
+    };
+  }
+
+  if (["preparando", "preparing", "processing"].includes(normalizedStatus)) {
+    return {
+      eyebrow: "Paso 3 de 4",
+      title: "Estamos preparando tu pedido",
+      description: "Tu pedido se esta preparando con cuidado.",
+      tone: "preparing",
+    };
+  }
+
+  if (["en_camino", "on_the_way"].includes(normalizedStatus)) {
+    return {
+      eyebrow: "Paso 4 de 4",
+      title: "Tu pedido va en camino",
+      description: "Ya salio rumbo a tu hotel o direccion.",
+      tone: "on-the-way",
+    };
+  }
+
+  if (["entregado", "delivered"].includes(normalizedStatus)) {
+    return {
+      eyebrow: "Pedido completado",
+      title: "Pedido entregado",
+      description: "Gracias por usar ParacasYa Market.",
+      tone: "delivered",
+    };
+  }
+
+  if (["cancelado", "cancelled", "canceled"].includes(normalizedStatus)) {
+    return {
+      eyebrow: "Pedido cancelado",
+      title: "Pedido cancelado",
+      description: "Contacta con ParacasYa Market si necesitas ayuda.",
+      tone: "cancelled",
+    };
+  }
+
+  return {
+    eyebrow: "Paso 1 de 4",
+    title: "Recibimos tu pedido",
+    description: "Estamos revisandolo para confirmarte por WhatsApp.",
+    tone: "pending",
+  };
+}
+
 function OrderSuccessReceipt({ order, onNewOrder, onBackToStore, onDeleteStoredReceipt }) {
   const [copyLabel, setCopyLabel] = useState("Copiar codigo");
+  const [liveStatus, setLiveStatus] = useState(order?.status ?? "Pendiente");
 
   const supportWhatsappUrl = useMemo(
     () => buildSupportWhatsappUrl(order?.orderCode),
     [order?.orderCode],
   );
+  const progressIndex = getProgressIndex(liveStatus);
+  const normalizedLiveStatus = normalizeStatus(liveStatus);
+  const isCancelled = ["cancelado", "cancelled", "canceled"].includes(normalizedLiveStatus);
+  const statusPresentation = getStatusPresentation(liveStatus);
+
+  useEffect(() => {
+    setLiveStatus(order?.status ?? "Pendiente");
+  }, [order?.orderCode, order?.status]);
+
+  useEffect(() => {
+    if (!order?.orderCode && !order?.id) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    let intervalId;
+
+    async function refreshStatus() {
+      try {
+        const statusData = await getOrderStatus({
+          orderCode: order.orderCode,
+          orderId: order.id,
+        });
+
+        if (isMounted && statusData?.status) {
+          setLiveStatus(statusData.status);
+        }
+      } catch (error) {
+        console.warn("No se pudo actualizar el estado del pedido en el recibo.", error);
+      }
+    }
+
+    if (!isTerminalStatus(liveStatus)) {
+      refreshStatus();
+      intervalId = window.setInterval(refreshStatus, 8000);
+    }
+
+    return () => {
+      isMounted = false;
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [order?.id, order?.orderCode, liveStatus]);
 
   if (!order) {
     return null;
@@ -115,18 +264,49 @@ function OrderSuccessReceipt({ order, onNewOrder, onBackToStore, onDeleteStoredR
           ParacasYa Market.
         </p>
 
+        <div className={`order-success-tracker order-success-tracker-${statusPresentation.tone}`}>
+          <div className="order-success-tracker-message">
+            <div>
+              <span>{statusPresentation.eyebrow}</span>
+              <h3>{statusPresentation.title}</h3>
+              <p>{statusPresentation.description}</p>
+            </div>
+          </div>
+
         <div className="order-success-steps">
-          {receiptSteps.map((step) => {
+          {receiptSteps.map((step, index) => {
             const Icon = step.icon;
+            const isCompleted = index < progressIndex && !isCancelled;
+            const isCurrent = index === progressIndex && !isCancelled;
+            const stepState = isCancelled
+              ? index === 0
+                ? "cancelled"
+                : "pending"
+              : isCompleted
+                ? "completed"
+                : isCurrent
+                  ? "current"
+                  : "pending";
+
             return (
-              <div className={step.active ? "active" : ""} key={step.label}>
+              <div
+                className={`order-success-step ${stepState}`}
+                key={step.label}
+              >
                 <span>
-                  <Icon size={16} />
+                  {isCompleted ? <CheckCircle2 size={16} /> : <Icon size={16} />}
                 </span>
-                <p>{step.label}</p>
+                <div>
+                  <small>{index + 1}</small>
+                  <p>{step.label}</p>
+                </div>
               </div>
             );
           })}
+        </div>
+          <p className={`order-success-status-text ${isCancelled ? "cancelled" : ""}`}>
+            {getStatusText(liveStatus)}
+          </p>
         </div>
 
         <div className="order-success-grid">

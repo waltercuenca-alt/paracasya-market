@@ -32,6 +32,7 @@ function buildStoredOrderReceipt(order) {
     customer_phone: order.customerPhone,
     delivery_fee: order.totals.deliveryFee,
     delivery_notes: order.deliveryNotes,
+    id: order.id,
     items: order.items.map((item) => ({
       name: item.name,
       quantity: item.quantity,
@@ -43,6 +44,7 @@ function buildStoredOrderReceipt(order) {
     order_origin_label: order.originLabel,
     payment_method: order.paymentMethod,
     room_reference: order.reference,
+    status: order.status,
     subtotal: order.totals.subtotal,
     total: order.totals.total,
   };
@@ -61,6 +63,7 @@ function parseStoredOrderReceipt(payload) {
     customerName: payload.customer_name ?? "",
     customerPhone: payload.customer_phone ?? "",
     deliveryNotes: payload.delivery_notes ?? "",
+    id: payload.id ?? "",
     items: items.map((item, index) => ({
       id: `stored-${index}-${item.name ?? "producto"}`,
       name: item.name ?? "Producto",
@@ -72,6 +75,7 @@ function parseStoredOrderReceipt(payload) {
     originLabel: payload.order_origin_label ?? "",
     paymentMethod: payload.payment_method ?? "",
     reference: payload.room_reference ?? "",
+    status: payload.status ?? "Pendiente",
     totals: {
       deliveryFee: Number(payload.delivery_fee ?? 0),
       subtotal: Number(payload.subtotal ?? 0),
@@ -266,6 +270,7 @@ function ClientePage() {
       const order = await createOrder({ form, items, origin: orderOrigin });
       const receiptOrder = {
         createdAt: new Date().toISOString(),
+        id: order.id,
         orderCode: order.orderCode,
         customerName: submittedForm.name,
         customerPhone: submittedForm.whatsapp,
@@ -276,6 +281,7 @@ function ClientePage() {
         items: submittedItems,
         totals,
         originLabel: orderOrigin?.label ?? "",
+        status: "Pendiente",
       };
       saveLastOrderReceipt(receiptOrder);
       setLastOrderReceipt(receiptOrder);

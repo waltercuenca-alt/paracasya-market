@@ -174,20 +174,120 @@
     @apply mt-3 rounded-2xl bg-sand-50 px-4 py-3 text-xs font-bold leading-relaxed text-slate-500;
   }
 
+  .order-success-tracker {
+    @apply mt-4 overflow-hidden rounded-[1.8rem] border border-ocean-100 bg-white shadow-sm shadow-ocean-950/5;
+  }
+
+  .order-success-tracker-message {
+    @apply bg-ocean-950 p-5 text-white;
+    background:
+      radial-gradient(circle at 88% 18%, rgba(255, 200, 61, 0.2), transparent 30%),
+      linear-gradient(135deg, #062d46 0%, #075c79 62%, #087091 100%);
+  }
+
+  .order-success-tracker-delivered .order-success-tracker-message {
+    background:
+      radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.3), transparent 30%),
+      linear-gradient(135deg, #047857 0%, #059669 55%, #14b8a6 100%);
+  }
+
+  .order-success-tracker-cancelled .order-success-tracker-message {
+    background:
+      radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.22), transparent 30%),
+      linear-gradient(135deg, #7f1d1d 0%, #be123c 58%, #f97316 100%);
+  }
+
+  .order-success-tracker-message span {
+    @apply text-[10px] font-black uppercase tracking-[0.18em] text-delivery;
+  }
+
+  .order-success-tracker-message h3 {
+    @apply mt-2 font-display text-2xl font-black sm:text-3xl;
+  }
+
+  .order-success-tracker-message p {
+    @apply mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-blue-100;
+  }
+
+  .order-success-tracker-delivered .order-success-tracker-message span,
+  .order-success-tracker-cancelled .order-success-tracker-message span {
+    @apply text-white/80;
+  }
+
   .order-success-steps {
-    @apply mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4;
+    @apply grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4;
   }
 
-  .order-success-steps > div {
-    @apply rounded-[1.3rem] border border-slate-100 bg-slate-50 p-3 text-center text-xs font-black text-slate-400;
+  .order-success-step {
+    @apply relative flex items-center gap-3 rounded-[1.35rem] border bg-slate-50 p-3 text-left text-slate-400 transition-all duration-300;
   }
 
-  .order-success-steps > div.active {
+  .order-success-step::after {
+    @apply hidden lg:block;
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 0.35rem);
+    width: 0.7rem;
+    height: 3px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    transform: translateY(-50%);
+  }
+
+  .order-success-step:last-child::after {
+    display: none;
+  }
+
+  .order-success-step.completed::after,
+  .order-success-step.current::after {
+    background: #10b981;
+  }
+
+  .order-success-step span {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm transition-all duration-300;
+  }
+
+  .order-success-step small {
+    @apply text-[10px] font-black uppercase tracking-[0.14em];
+  }
+
+  .order-success-step p {
+    @apply mt-0.5 text-xs font-black leading-tight;
+  }
+
+  .order-success-step.completed {
     @apply border-emerald-100 bg-emerald-50 text-emerald-700;
   }
 
-  .order-success-steps span {
-    @apply mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-2xl bg-white shadow-sm;
+  .order-success-step.completed span {
+    @apply bg-emerald-600 text-white;
+    animation: receipt-check-pop 0.32s ease-out;
+  }
+
+  .order-success-step.current {
+    @apply scale-[1.01] border-delivery/70 bg-delivery/20 text-ocean-950 shadow-md shadow-delivery/20;
+  }
+
+  .order-success-step.current span {
+    @apply bg-ocean-950 text-delivery;
+    animation: receipt-step-pulse 1.8s ease-in-out infinite;
+  }
+
+  .order-success-step.cancelled {
+    @apply border-rose-100 bg-rose-50 text-rose-700;
+  }
+
+  .order-success-step.cancelled span {
+    @apply bg-rose-600 text-white;
+  }
+
+  .order-success-status-text {
+    @apply mx-4 mb-4 rounded-2xl bg-ocean-50 px-4 py-3 text-center text-sm font-black text-ocean-900;
+  }
+
+  .order-success-status-text.cancelled {
+    @apply bg-rose-50 text-rose-700;
   }
 
   .order-success-grid {
@@ -343,6 +443,30 @@
   }
   50% {
     transform: translateY(-5px);
+  }
+}
+
+@keyframes receipt-step-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 200, 61, 0.38);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 200, 61, 0);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes receipt-check-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 

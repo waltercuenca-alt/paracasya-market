@@ -152,6 +152,38 @@ export async function getOrders() {
   return (data ?? []).map(normalizeOrder);
 }
 
+export async function getOrderStatus({ orderCode, orderId }) {
+  if (!orderCode && !orderId) {
+    return null;
+  }
+
+  const client = getSupabaseClient();
+  let query = client.from("orders").select("id, order_code, status").limit(1);
+
+  if (orderCode) {
+    query = query.eq("order_code", orderCode);
+  } else {
+    query = query.eq("id", orderId);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) {
+    console.error("Error consultando el estado del pedido:", JSON.stringify(error, null, 2));
+    throw new Error("No pudimos actualizar el estado del pedido.");
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    orderCode: data.order_code,
+    status: data.status ?? "Pendiente",
+  };
+}
+
 export async function updateOrderStatus(orderId, status) {
   if (!validOrderStatuses.includes(status)) {
     throw new Error("El estado seleccionado no es válido.");
