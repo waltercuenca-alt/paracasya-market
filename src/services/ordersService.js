@@ -61,6 +61,58 @@ function isMissingOriginColumnError(error) {
   );
 }
 
+function buildNotificationPayload({ orderCode, orderPayload, orderItems }) {
+  return {
+    order_code: orderCode,
+    customer_name: orderPayload.customer_name,
+    customer_phone: orderPayload.customer_phone,
+    location_name: orderPayload.location_name,
+    room_reference: orderPayload.room_reference,
+    payment_method: orderPayload.payment_method,
+    delivery_notes: orderPayload.delivery_notes,
+    order_origin_label: orderPayload.order_origin_label,
+    items: orderItems.map((item) => ({
+      product_id: item.product_id,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price,
+    })),
+    subtotal: orderPayload.subtotal,
+    delivery_fee: orderPayload.delivery_fee,
+    total: orderPayload.total,
+  };
+}
+
+async function notifyOrderTelegram(payload) {
+  const internalNotifyToken = import.meta.env.VITE_INTERNAL_NOTIFY_TOKEN;
+
+  if (!internalNotifyToken) {
+    console.warn("Alerta Telegram omitida: VITE_INTERNAL_NOTIFY_TOKEN no esta configurado.");
+    return;
+  }
+
+  try {
+    const client = getSupabaseClient();
+    const { data, error } = await client.functions.invoke("notify-order-telegram", {
+      body: payload,
+      headers: {
+        "x-internal-notify-token": internalNotifyToken,
+      },
+    });
+
+    if (error || data?.error) {
+      console.warn("No se pudo enviar la alerta interna de Telegram.", {
+        error: error?.message ?? data?.error ?? "Error desconocido",
+      });
+    }
+  } catch (error) {
+    console.warn("No se pudo invocar la alerta interna de Telegram.", {
+      error: error instanceof Error ? error.message : "Error desconocido",
+    });
+  }
+}
+
 export async function createOrder({ form, items, origin }) {
   const client = getSupabaseClient();
   const orderCode = generateOrderCode();
@@ -130,6 +182,14 @@ export async function createOrder({ form, items, origin }) {
       `El pedido ${orderCode} fue creado, pero no pudimos registrar sus productos. Contáctanos para confirmarlo.`,
     );
   }
+
+  void notifyOrderTelegram(
+    buildNotificationPayload({
+      orderCode: order.order_code ?? orderCode,
+      orderItems,
+      orderPayload,
+    }),
+  );
 
   return {
     id: order.id,
