@@ -1,4 +1,13 @@
-import { Clock3, MapPin, Search, ShieldCheck, ShoppingCart, Sparkles, Truck } from "lucide-react";
+import {
+  Clock3,
+  MapPin,
+  MessageCircle,
+  Search,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  Truck,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Cart from "../components/Cart";
 import CategoryPill from "../components/CategoryPill";
@@ -462,6 +471,33 @@ function ClientePage() {
             ))}
           </div>
         </div>
+        <section
+          aria-label="Confianza ParacasYa"
+          className="mt-3 grid grid-cols-3 gap-2 rounded-[1.6rem] border border-ocean-100/70 bg-white/90 p-2.5 shadow-sm shadow-ocean-950/5"
+        >
+          {[
+            { icon: Truck, title: "Entrega rápida", copy: "En Paracas" },
+            { icon: MessageCircle, title: "Atención", copy: "Por WhatsApp" },
+            { icon: ShieldCheck, title: "Pedido seguro", copy: "Servicio local" },
+          ].map(({ icon: Icon, title, copy }) => (
+            <div
+              className="flex min-w-0 flex-col items-center rounded-2xl bg-sand-50 px-1.5 py-2.5 text-center sm:flex-row sm:gap-2.5 sm:px-3 sm:text-left"
+              key={title}
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ocean-900 text-delivery">
+                <Icon size={15} strokeWidth={2.4} />
+              </span>
+              <div className="mt-1.5 min-w-0 sm:mt-0">
+                <p className="text-[10px] font-black leading-tight text-ocean-950 sm:text-xs">
+                  {title}
+                </p>
+                <p className="mt-0.5 text-[9px] font-semibold leading-tight text-slate-500 sm:text-[11px]">
+                  {copy}
+                </p>
+              </div>
+            </div>
+          ))}
+        </section>
         {catalogNotice && (
           <div className="my-5 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
             {catalogNotice}
