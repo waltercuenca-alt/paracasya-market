@@ -349,30 +349,30 @@ function ClientePage() {
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-sand-50 via-white to-sand-50">
       <div className="pointer-events-none absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-cyan-200/25 blur-3xl" />
-      <div className="page-container relative pb-14 pt-6 sm:pt-8">
-        <section className="relative overflow-hidden rounded-[2.3rem] bg-ocean-950 px-5 py-6 text-white shadow-2xl shadow-ocean-950/20 sm:px-8 sm:py-8">
+      <div className="page-container relative pb-14 pt-4 sm:pt-6">
+        <section className="relative overflow-hidden rounded-[2rem] bg-ocean-950 px-4 py-4 text-white shadow-2xl shadow-ocean-950/20 sm:px-7 sm:py-6">
           <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-delivery/20 blur-3xl" />
           <div className="absolute bottom-0 right-0 hidden h-full w-1/2 bg-[radial-gradient(circle_at_70%_45%,rgba(255,255,255,0.18),transparent_34%)] lg:block" />
 
-          <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center">
+          <div className="relative grid gap-4 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-center lg:gap-6">
             <div>
-              <p className="inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-delivery ring-1 ring-white/10">
+              <p className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-delivery ring-1 ring-white/10 sm:text-xs">
                 {storeSettings.storeOpen ? "Tienda abierta ahora" : "Tienda cerrada por ahora"}
               </p>
-              <h1 className="mt-5 max-w-2xl font-display text-3xl font-black tracking-tight sm:text-5xl">
+              <h1 className="mt-3 max-w-2xl font-display text-2xl font-black tracking-tight sm:text-4xl lg:text-5xl">
                 Pedí tus esenciales de Paracas en minutos
               </h1>
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-blue-100 sm:text-base">
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-blue-100 sm:text-base">
                 Bebidas frías, comida rápida, snacks y promos directo a tu hotel, Airbnb o
                 casa.
               </p>
 
-              <label className="mt-6 flex h-16 max-w-xl items-center gap-3 rounded-[1.35rem] bg-white px-4 text-slate-400 shadow-xl shadow-ocean-950/10 ring-1 ring-white/20">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-ocean-50 text-ocean-700">
-                  <Search size={20} />
+              <label className="mt-4 flex h-13 max-w-xl items-center gap-3 rounded-[1.2rem] bg-white px-3 text-slate-400 shadow-xl shadow-ocean-950/10 ring-1 ring-white/20 sm:h-14 sm:px-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ocean-50 text-ocean-700">
+                  <Search size={18} />
                 </span>
                 <input
-                  className="w-full bg-transparent text-base font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+                  className="w-full bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400 sm:text-base"
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Buscar bebidas, comida, snacks..."
                   type="search"
@@ -380,37 +380,37 @@ function ClientePage() {
                 />
               </label>
 
-              <div className="mt-5 grid grid-cols-3 gap-2 text-xs font-bold text-blue-100 sm:max-w-xl">
-                <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10">
-                  <Clock3 className="mb-2 text-delivery" size={18} />
+              <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] font-bold text-blue-100 sm:max-w-xl sm:text-xs">
+                <div className="rounded-xl bg-white/10 p-2.5 ring-1 ring-white/10">
+                  <Clock3 className="mb-1 text-delivery" size={16} />
                   Rápido
                 </div>
-                <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10">
-                  <MapPin className="mb-2 text-delivery" size={18} />
+                <div className="rounded-xl bg-white/10 p-2.5 ring-1 ring-white/10">
+                  <MapPin className="mb-1 text-delivery" size={16} />
                   Local
                 </div>
-                <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10">
-                  <ShieldCheck className="mb-2 text-delivery" size={18} />
+                <div className="rounded-xl bg-white/10 p-2.5 ring-1 ring-white/10">
+                  <ShieldCheck className="mb-1 text-delivery" size={16} />
                   Confiable
                 </div>
               </div>
             </div>
 
             <div className="relative">
-              <div className="rounded-[2rem] bg-white p-4 text-ocean-950 shadow-2xl shadow-ocean-950/20">
-                <div className="rounded-[1.6rem] bg-gradient-to-br from-sand-50 to-cyan-50 p-4">
+              <div className="rounded-[1.6rem] bg-white p-3 text-ocean-950 shadow-2xl shadow-ocean-950/20">
+                <div className="rounded-[1.3rem] bg-gradient-to-br from-sand-50 to-cyan-50 p-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-ocean-500">
                         Promo del día
                       </p>
-                      <h2 className="mt-1 font-display text-xl font-black">Combos listos</h2>
+                      <h2 className="mt-0.5 font-display text-lg font-black">Combos listos</h2>
                     </div>
                     <span className="rounded-full bg-ocean-900 px-3 py-1.5 text-xs font-black text-delivery">
                       Hoy
                     </span>
                   </div>
-                  <div className="mt-5 grid grid-cols-3 gap-3">
+                  <div className="mt-3 grid grid-cols-3 gap-2">
                     {catalogProducts
                       .filter((product) => product.category === "promo-dia")
                       .slice(0, 3)
@@ -420,22 +420,22 @@ function ClientePage() {
                           key={product.id}
                         >
                           <div
-                            className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-xs font-black text-ocean-900 ${product.colors}`}
+                            className={`mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br text-[10px] font-black text-ocean-900 sm:h-12 sm:w-12 ${product.colors}`}
                           >
                             {product.visual}
                           </div>
-                          <p className="mt-2 truncate text-[11px] font-extrabold">
+                          <p className="mt-1 truncate text-[10px] font-extrabold sm:text-[11px]">
                             {product.name}
                           </p>
                         </div>
                       ))}
                   </div>
-                  <div className="mt-5 flex items-center justify-between rounded-2xl bg-ocean-950 p-4 text-white">
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-ocean-950 p-3 text-white">
                     <div>
                       <p className="text-xs text-blue-100">Delivery activo</p>
-                      <p className="font-display text-lg font-black">Desde S/ 5</p>
+                      <p className="font-display text-base font-black">Desde S/ 5</p>
                     </div>
-                    <Truck className="text-delivery" size={28} />
+                    <Truck className="text-delivery" size={24} />
                   </div>
                 </div>
               </div>
@@ -443,7 +443,7 @@ function ClientePage() {
           </div>
         </section>
 
-        <div className="mt-6 rounded-[2rem] border border-white bg-white/80 p-3 shadow-lg shadow-ocean-950/5 backdrop-blur">
+        <div className="mt-4 rounded-[2rem] border border-white bg-white/80 p-3 shadow-lg shadow-ocean-950/5 backdrop-blur">
           <div className="mb-3 flex items-center justify-between px-1">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-ocean-600">
               Categorías
