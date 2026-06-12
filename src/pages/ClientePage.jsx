@@ -552,8 +552,8 @@ function ClientePage() {
         <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_390px]">
           <section id="catalogo-cliente">
             {showFeaturedSection && (
-              <div className="mb-8">
-                <div className="mb-4 flex items-end justify-between gap-4">
+              <div className="mb-5 sm:mb-8">
+                <div className="mb-3 flex items-end justify-between gap-4 sm:mb-4">
                   <div>
                     <div className="flex items-center gap-2">
                       <Sparkles className="text-delivery-dark" size={20} />
@@ -561,7 +561,7 @@ function ClientePage() {
                         Recomendados
                       </p>
                     </div>
-                    <h2 className="mt-1 font-display text-2xl font-black text-ocean-950">
+                    <h2 className="mt-1 font-display text-xl font-black text-ocean-950 sm:text-2xl">
                       Más pedidos para tu estadía
                     </h2>
                   </div>
@@ -569,10 +569,10 @@ function ClientePage() {
                     Favoritos
                   </span>
                 </div>
-                <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 xl:grid-cols-4">
+                <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 xl:grid-cols-4">
                   {featuredProducts.map((product) => (
-                    <div className="min-w-[78%] snap-start sm:min-w-0" key={`featured-${product.id}`}>
-                      <ProductCard onAdd={addProduct} product={product} />
+                    <div className="min-w-[62%] snap-start sm:min-w-0" key={`featured-${product.id}`}>
+                      <ProductCard compactMobile onAdd={addProduct} product={product} />
                     </div>
                   ))}
                 </div>
