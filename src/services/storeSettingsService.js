@@ -6,14 +6,23 @@ const STORE_SETTINGS_STORAGE_KEY = "paracasya_store_settings_preview";
 export const defaultStoreSettings = {
   id: "main",
   storeOpen: true,
+  deliveryActive: true,
+  deliveryFee: 5,
   openingHours: "Atendemos de 10:00 a.m. a 10:00 p.m.",
   closedMessage: "Estamos cerrados por ahora. Volvemos a atender mañana desde las 10:00 a.m.",
 };
+
+function normalizeDeliveryFee(value) {
+  const fee = Number(value);
+  return Number.isFinite(fee) && fee >= 0 ? fee : defaultStoreSettings.deliveryFee;
+}
 
 function normalizeStoreSettings(settings = {}) {
   return {
     id: settings.id ?? "main",
     storeOpen: Boolean(settings.store_open ?? settings.storeOpen ?? true),
+    deliveryActive: Boolean(settings.delivery_active ?? settings.deliveryActive ?? true),
+    deliveryFee: normalizeDeliveryFee(settings.delivery_fee ?? settings.deliveryFee),
     openingHours: settings.opening_hours ?? settings.openingHours ?? defaultStoreSettings.openingHours,
     closedMessage:
       settings.closed_message ?? settings.closedMessage ?? defaultStoreSettings.closedMessage,
@@ -46,6 +55,8 @@ export function storeSettingsPayload(settings) {
   return {
     id: "main",
     store_open: Boolean(settings.storeOpen ?? settings.store_open ?? true),
+    delivery_active: Boolean(settings.deliveryActive ?? settings.delivery_active ?? true),
+    delivery_fee: normalizeDeliveryFee(settings.deliveryFee ?? settings.delivery_fee),
     opening_hours: String(settings.openingHours ?? settings.opening_hours ?? "").trim(),
     closed_message: String(settings.closedMessage ?? settings.closed_message ?? "").trim(),
     updated_at: new Date().toISOString(),
@@ -63,7 +74,9 @@ export async function getStoreSettings() {
     const client = getSupabaseClient();
     const { data, error } = await client
       .from("store_settings")
-      .select("id, store_open, opening_hours, closed_message, updated_at")
+      .select(
+        "id, store_open, delivery_active, delivery_fee, opening_hours, closed_message, updated_at",
+      )
       .eq("id", "main")
       .maybeSingle();
 

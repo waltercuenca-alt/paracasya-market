@@ -9,6 +9,9 @@
 create table if not exists public.store_settings (
   id text primary key default 'main',
   store_open boolean not null default true,
+  delivery_active boolean not null default true,
+  delivery_fee numeric(10, 2) not null default 5.00
+    constraint store_settings_delivery_fee_nonnegative check (delivery_fee >= 0),
   opening_hours text not null default 'Atendemos de 10:00 a.m. a 10:00 p.m.',
   closed_message text not null default 'Estamos cerrados por ahora. Volvemos a atender mañana desde las 10:00 a.m.',
   created_at timestamptz default now(),
@@ -33,10 +36,19 @@ begin
   end if;
 end $$;
 
-insert into public.store_settings (id, store_open, opening_hours, closed_message)
+insert into public.store_settings (
+  id,
+  store_open,
+  delivery_active,
+  delivery_fee,
+  opening_hours,
+  closed_message
+)
 values (
   'main',
   true,
+  true,
+  5.00,
   'Atendemos de 10:00 a.m. a 10:00 p.m.',
   'Estamos cerrados por ahora. Volvemos a atender mañana desde las 10:00 a.m.'
 )

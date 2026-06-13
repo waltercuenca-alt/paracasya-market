@@ -14,9 +14,11 @@ function Cart({
   orderOrigin,
   storeSettings,
 }) {
-  const { subtotal, deliveryFee, total } = calculateOrderTotals(items);
+  const { subtotal, deliveryFee, total } = calculateOrderTotals(items, storeSettings);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const isStoreOpen = storeSettings?.storeOpen ?? true;
+  const isDeliveryActive = storeSettings?.deliveryActive ?? true;
+  const canSubmitOrder = isStoreOpen && isDeliveryActive;
 
   return (
     <aside
@@ -201,7 +203,13 @@ function Cart({
           </div>
           <div className="flex justify-between text-slate-500">
             <span>Delivery</span>
-            <span>{items.length ? formatCurrency(deliveryFee) : "-"}</span>
+            <span>
+              {!isDeliveryActive
+                ? "Pausado"
+                : items.length
+                  ? formatCurrency(deliveryFee)
+                  : "-"}
+            </span>
           </div>
           <div className="flex justify-between border-t border-dashed border-slate-200 pt-3 font-display text-xl font-black text-ocean-950">
             <span>Total</span>
@@ -217,13 +225,24 @@ function Cart({
           </div>
         )}
 
+        {isStoreOpen && !isDeliveryActive && (
+          <div className="mb-4 rounded-[1.35rem] border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
+            <p className="font-display text-base font-black text-ocean-950">Delivery pausado</p>
+            <p className="mt-1 leading-relaxed">
+              Por el momento no estamos recibiendo pedidos para entrega.
+            </p>
+          </div>
+        )}
+
         <button
           className="button-primary w-full rounded-2xl py-4 text-base"
-          disabled={!items.length || isSubmitting || !isStoreOpen}
+          disabled={!items.length || isSubmitting || !canSubmitOrder}
           type="submit"
         >
           {!isStoreOpen
             ? "Tienda cerrada"
+            : !isDeliveryActive
+              ? "Delivery pausado"
             : isSubmitting
               ? "Enviando pedido..."
               : "Continuar pedido"}

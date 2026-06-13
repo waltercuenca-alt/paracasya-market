@@ -137,7 +137,7 @@ function ClientePage() {
   const [storeSettings, setStoreSettings] = useState(defaultStoreSettings);
   const [orderOrigin, setOrderOrigin] = useState(null);
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
-  const { total: cartTotal } = calculateOrderTotals(items);
+  const { total: cartTotal } = calculateOrderTotals(items, storeSettings);
 
   useEffect(() => {
     let isMounted = true;
@@ -270,13 +270,21 @@ function ClientePage() {
       return;
     }
 
+    if (!storeSettings.deliveryActive) {
+      setFeedback({
+        type: "error",
+        message: "El delivery está pausado por el momento.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const submittedForm = { ...form };
       const submittedItems = items.map((item) => ({ ...item }));
-      const totals = calculateOrderTotals(submittedItems);
-      const order = await createOrder({ form, items, origin: orderOrigin });
+      const totals = calculateOrderTotals(submittedItems, storeSettings);
+      const order = await createOrder({ form, items, origin: orderOrigin, storeSettings });
       const receiptOrder = {
         createdAt: new Date().toISOString(),
         id: order.id,
@@ -441,8 +449,14 @@ function ClientePage() {
                   </div>
                   <div className="mt-3 flex items-center justify-between rounded-xl bg-ocean-950 p-3 text-white">
                     <div>
-                      <p className="text-xs text-blue-100">Delivery activo</p>
-                      <p className="font-display text-base font-black">Desde S/ 5</p>
+                      <p className="text-xs text-blue-100">
+                        {storeSettings.deliveryActive ? "Delivery activo" : "Delivery pausado"}
+                      </p>
+                      <p className="font-display text-base font-black">
+                        {storeSettings.deliveryActive
+                          ? formatCurrency(storeSettings.deliveryFee)
+                          : "No disponible"}
+                      </p>
                     </div>
                     <Truck className="text-delivery" size={24} />
                   </div>

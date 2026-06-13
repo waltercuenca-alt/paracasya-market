@@ -73,9 +73,13 @@ function categoryPayload(category: Record<string, unknown>) {
 }
 
 function storeSettingsPayload(settings: Record<string, unknown>) {
+  const deliveryFee = Number(settings.deliveryFee ?? settings.delivery_fee ?? 5);
+
   return {
     id: "main",
     store_open: Boolean(settings.storeOpen ?? settings.store_open ?? true),
+    delivery_active: Boolean(settings.deliveryActive ?? settings.delivery_active ?? true),
+    delivery_fee: Number.isFinite(deliveryFee) && deliveryFee >= 0 ? deliveryFee : 5,
     opening_hours: String(
       settings.openingHours ?? settings.opening_hours ?? "Atendemos de 10:00 a.m. a 10:00 p.m.",
     ).trim(),

@@ -113,10 +113,10 @@ async function notifyOrderTelegram(payload) {
   }
 }
 
-export async function createOrder({ form, items, origin }) {
+export async function createOrder({ form, items, origin, storeSettings }) {
   const client = getSupabaseClient();
   const orderCode = generateOrderCode();
-  const { subtotal, deliveryFee, total } = calculateOrderTotals(items);
+  const { subtotal, deliveryFee, total } = calculateOrderTotals(items, storeSettings);
 
   const orderPayload = {
     order_code: orderCode,

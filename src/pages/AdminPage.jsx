@@ -172,6 +172,8 @@ function AdminPage() {
   const loadStoreSettings = useCallback(async () => {
     const settings = await getStoreSettings();
     setStoreOpen(settings.storeOpen);
+    setDeliveryActive(settings.deliveryActive);
+    setDeliveryFee(String(settings.deliveryFee));
     setOpeningHours(settings.openingHours);
     setClosedMessage(settings.closedMessage);
   }, []);
@@ -211,11 +213,15 @@ function AdminPage() {
     try {
       const result = await saveStoreSettings({
         storeOpen,
+        deliveryActive,
+        deliveryFee: Number(deliveryFee),
         openingHours,
         closedMessage,
       });
 
       setStoreOpen(result.settings.storeOpen);
+      setDeliveryActive(result.settings.deliveryActive);
+      setDeliveryFee(String(result.settings.deliveryFee));
       setOpeningHours(result.settings.openingHours);
       setClosedMessage(result.settings.closedMessage);
       setSuccessMessage(
@@ -528,6 +534,47 @@ function AdminPage() {
             </label>
           </div>
 
+          <div className="border-t border-slate-100 pt-4">
+            <div className="mb-3">
+              <h3 className="font-display font-bold text-ocean-950">Configuración de delivery</h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Estos cambios se aplican al checkout y a los nuevos pedidos.
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <ToggleCard
+                active={deliveryActive}
+                activeLabel="Repartos activos"
+                icon={Bike}
+                inactiveLabel="Repartos pausados"
+                label="Delivery"
+                onToggle={() => setDeliveryActive((current) => !current)}
+              />
+              <label className="card flex items-center justify-between gap-3 p-4">
+                <span>
+                  <span className="block text-sm font-semibold text-ocean-950">
+                    Tarifa de delivery
+                  </span>
+                  <span className="block text-xs text-slate-400">
+                    Se cobrará en los nuevos pedidos
+                  </span>
+                </span>
+                <span className="flex items-center rounded-xl bg-sand-50 px-3 py-2 font-bold text-ocean-900">
+                  S/
+                  <input
+                    className="ml-2 w-20 bg-transparent text-right outline-none"
+                    min="0"
+                    onChange={(event) => setDeliveryFee(event.target.value)}
+                    required
+                    step="0.5"
+                    type="number"
+                    value={deliveryFee}
+                  />
+                </span>
+              </label>
+            </div>
+          </div>
+
           <button
             className="button-primary rounded-2xl px-5 py-3"
             disabled={isSavingStoreSettings}
@@ -537,40 +584,6 @@ function AdminPage() {
             {isSavingStoreSettings ? "Guardando..." : "Guardar configuración"}
           </button>
         </form>
-      </section>
-
-      <section className="mt-8">
-        <div className="mb-4 flex items-center gap-2">
-          <Settings2 className="text-ocean-600" size={19} />
-          <h2 className="font-display text-lg font-bold text-ocean-950">Configuración rápida</h2>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <ToggleCard
-            active={deliveryActive}
-            activeLabel="Repartos activos"
-            icon={Bike}
-            inactiveLabel="Repartos pausados"
-            label="Delivery"
-            onToggle={() => setDeliveryActive((current) => !current)}
-          />
-          <label className="card flex items-center justify-between gap-3 p-4">
-            <span>
-              <span className="block text-sm font-semibold text-ocean-950">Tarifa de delivery</span>
-              <span className="block text-xs text-slate-400">Monto base actual</span>
-            </span>
-            <span className="flex items-center rounded-xl bg-sand-50 px-3 py-2 font-bold text-ocean-900">
-              S/
-              <input
-                className="ml-2 w-14 bg-transparent text-right outline-none"
-                min="0"
-                onChange={(event) => setDeliveryFee(event.target.value)}
-                step="0.5"
-                type="number"
-                value={deliveryFee}
-              />
-            </span>
-          </label>
-        </div>
       </section>
 
       <section className="mt-6 rounded-[2rem] border border-amber-100 bg-amber-50 p-5">
